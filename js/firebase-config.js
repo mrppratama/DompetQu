@@ -46,12 +46,12 @@ const customStoredConfig = (() => {
 })();
 
 export const firebaseConfig = customStoredConfig || {
-  apiKey: "AIzaSyCiy6nwb4ASZOB1Wq4vLSW90oOQMdkUEog",
+  apiKey: "AIzaSyCiy6nwb4ASZOBlWq4vLSW90oOQMdkUEog",
   authDomain: "dompetqu-28a6b.firebaseapp.com",
   projectId: "dompetqu-28a6b",
   storageBucket: "dompetqu-28a6b.firebasestorage.app",
   messagingSenderId: "723032764667",
-  appId: "1:723032764667:web:d6f13ac56eecdb38b006e"
+  appId: "1:723032764667:web:d6f13ac56eecddb38b005e"
 };
 
 // Check if credentials are placeholders
