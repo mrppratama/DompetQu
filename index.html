@@ -109,25 +109,64 @@
       <!-- ========================================== -->
       <section id="view-dashboard" class="view">
         <div class="dash-hero">
-          <p class="greeting">Selamat datang, <span class="user-display-name">Pengguna</span></p>
-          <span class="eyebrow">Total Saldo</span>
-          <div class="amount-hero" id="dash-total-balance">Rp0</div>
+          <div class="dash-hero-card">
+            <div class="dash-hero-top">
+              <div class="dash-hero-badge">
+                <span class="live-dot"></span>
+                <span>Total Saldo Dompet</span>
+              </div>
+              <p class="greeting" style="margin: 0; font-size: 13px;">Hai, <strong class="user-display-name">Pengguna</strong></p>
+            </div>
 
-          <dl class="stat-row">
-            <div class="stat stat-income" id="widget-income">
-              <dt><i data-lucide="trending-up" class="icon" style="width:15px;height:15px;"></i> Pemasukan</dt>
-              <dd id="dash-month-income">Rp0</dd>
+            <div class="amount-hero" id="dash-total-balance">Rp0</div>
+
+            <!-- 3 Stat Metric Cards -->
+            <div class="stat-grid">
+              <div class="stat-card stat-income" id="widget-income">
+                <div class="stat-card-head">
+                  <div class="stat-pill-icon"><i data-lucide="trending-up" class="icon" style="width:13px;height:13px;"></i></div>
+                  <span>Pemasukan</span>
+                </div>
+                <div class="stat-card-num text-income" id="dash-month-income">Rp0</div>
+              </div>
+              <div class="stat-card stat-expense" id="widget-expense">
+                <div class="stat-card-head">
+                  <div class="stat-pill-icon"><i data-lucide="trending-down" class="icon" style="width:13px;height:13px;"></i></div>
+                  <span>Pengeluaran</span>
+                </div>
+                <div class="stat-card-num text-expense" id="dash-month-expense">Rp0</div>
+              </div>
+              <div class="stat-card stat-net" id="widget-net">
+                <div class="stat-card-head">
+                  <div class="stat-pill-icon"><i data-lucide="wallet" class="icon" style="width:13px;height:13px;"></i></div>
+                  <span>Saldo Bersih</span>
+                </div>
+                <div class="stat-card-num" id="dash-net-cash">Rp0</div>
+              </div>
             </div>
-            <div class="stat stat-expense" id="widget-expense">
-              <dt><i data-lucide="trending-down" class="icon" style="width:15px;height:15px;"></i> Pengeluaran</dt>
-              <dd id="dash-month-expense">Rp0</dd>
+          </div>
+        </div>
+
+        <!-- Quick Action Shortcuts -->
+        <div class="dash-quick-actions">
+          <button type="button" class="dash-action-btn btn-quick-income" title="Catat Pemasukan">
+            <div class="dash-action-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--primary);">
+              <i data-lucide="arrow-down-left" style="width:18px;height:18px;"></i>
             </div>
-            <div class="stat stat-net" id="widget-net">
-              <dt><i data-lucide="wallet" class="icon" style="width:15px;height:15px;"></i> Saldo Bersih</dt>
-              <dd id="dash-net-cash">Rp0</dd>
+            <span>Pemasukan</span>
+          </button>
+          <button type="button" class="dash-action-btn btn-quick-expense" title="Catat Pengeluaran">
+            <div class="dash-action-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);">
+              <i data-lucide="arrow-up-right" style="width:18px;height:18px;"></i>
             </div>
-          </dl>
-          <p class="period-note">Akumulasi pengeluaran dan pemasukan bulan ini</p>
+            <span>Pengeluaran</span>
+          </button>
+          <button type="button" class="dash-action-btn btn-quick-transfer" title="Transfer Antar Pundi">
+            <div class="dash-action-icon" style="background: rgba(110, 159, 214, 0.15); color: #6E9FD6;">
+              <i data-lucide="repeat" style="width:18px;height:18px;"></i>
+            </div>
+            <span>Transfer</span>
+          </button>
         </div>
 
         <!-- Budget Warnings Alert Area -->
@@ -174,9 +213,14 @@
       <!-- ========================================== -->
       <section id="view-pundi" class="view" hidden>
         <div class="page-head">
-          <div>
-            <span class="eyebrow">Envelope Budgeting</span>
-            <h2 class="amount-lg">Pundi-Pundi</h2>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button type="button" class="icon-btn btn-back-dashboard" aria-label="Kembali ke Dashboard">
+              <i data-lucide="arrow-left" class="icon" style="width:18px;height:18px;"></i>
+            </button>
+            <div>
+              <span class="eyebrow">Envelope Budgeting</span>
+              <h2 class="amount-lg">Pundi-Pundi</h2>
+            </div>
           </div>
           <div class="page-head-actions">
             <button type="button" class="btn btn-primary btn-open-pundi-modal">
@@ -500,14 +544,13 @@
         <i data-lucide="layout-dashboard" class="icon" style="width:20px;height:20px;"></i>
         <span>Dashboard</span>
       </a>
-      <a href="#pundi" class="bnav-link" data-view="pundi">
-        <i data-lucide="wallet-cards" class="icon" style="width:20px;height:20px;"></i>
-        <span>Pundi</span>
-      </a>
       <a href="#goals" class="bnav-link" data-view="goals">
         <i data-lucide="target" class="icon" style="width:20px;height:20px;"></i>
         <span>Target</span>
       </a>
+      <button type="button" class="bnav-fab btn-open-tx-modal" aria-label="Tambah Transaksi Baru">
+        <i data-lucide="plus" style="width:24px;height:24px;"></i>
+      </button>
       <a href="#transactions" class="bnav-link" data-view="transactions">
         <i data-lucide="arrow-left-right" class="icon" style="width:20px;height:20px;"></i>
         <span>Transaksi</span>
@@ -517,11 +560,6 @@
         <span>Laporan</span>
       </a>
     </nav>
-
-    <!-- Floating Action Button for Adding Transactions on Mobile -->
-    <button type="button" class="floating-fab btn-open-tx-modal" aria-label="Tambah Transaksi Baru">
-      <i data-lucide="plus" style="width:24px;height:24px;"></i>
-    </button>
   </div>
 
   <!-- ============================================================== -->
@@ -872,9 +910,21 @@
 
         <!-- Quick Settings & Actions List -->
         <div class="profile-menu-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+          <!-- Kelola Pundi-Pundi -->
+          <button type="button" class="profile-menu-item" id="profile-btn-pundi">
+            <div class="profile-menu-item-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--primary);">
+              <i data-lucide="wallet-cards" class="icon" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div class="profile-menu-item-text">
+              <span class="title">Kelola Pundi-Pundi</span>
+              <span class="desc">Alokasi amplop anggaran & saldo pundi</span>
+            </div>
+            <i data-lucide="chevron-right" class="icon" style="width: 16px; height: 16px; color: var(--text-3);"></i>
+          </button>
+
           <!-- Kelola Kategori Transaksi -->
           <button type="button" class="profile-menu-item" id="profile-btn-categories">
-            <div class="profile-menu-item-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--primary);">
+            <div class="profile-menu-item-icon" style="background: rgba(110, 159, 214, 0.15); color: #6E9FD6;">
               <i data-lucide="tag" class="icon" style="width: 18px; height: 18px;"></i>
             </div>
             <div class="profile-menu-item-text">
@@ -918,9 +968,9 @@
             </div>
             <div class="profile-menu-item-text">
               <span class="title">Versi Aplikasi</span>
-              <span class="desc">DompetQu v1.2.0 &bull; Klik untuk riwayat pembaruan</span>
+              <span class="desc">DompetQu v1.3.0 &bull; Klik untuk riwayat pembaruan</span>
             </div>
-            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.2.0</span>
+            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.3.0</span>
           </button>
         </div>
 
@@ -949,12 +999,28 @@
       </div>
 
       <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding-right: 4px;">
+        <!-- Version 1.3.0 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.3.0</span>
+              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
+            </div>
+            <span class="changelog-date">7 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Pemisah Ribuan Otomatis:</strong> Input nominal otomatis diformat dengan tanda titik ribuan (misal: <code style="color:var(--primary); font-size:12px;">1.000</code>, <code style="color:var(--primary); font-size:12px;">20.000</code>) secara langsung saat mengetik.</li>
+            <li><strong>Tata Letak Mobile Diperbarui:</strong> Tombol Tambah Transaksi (<code style="color:var(--primary); font-size:12px;">+</code>) kini berada di tengah bottom bar; menu Target Keuangan berada tepat di sebelah Dashboard.</li>
+            <li><strong>Menu Pundi di Profil:</strong> Kelola Pundi-Pundi kini dapat diakses langsung dari menu profil & kartu ringkasan dashboard dengan tombol kembali instan.</li>
+            <li><strong>Dashboard Mobile Lebih Cantik:</strong> Desain kartu hero fintech modern dengan indikator saldo aktif dan tombol shortcut cepat (Pemasukan, Pengeluaran, Transfer).</li>
+          </ul>
+        </div>
+
         <!-- Version 1.2.0 -->
         <div class="changelog-card">
           <div class="changelog-head">
             <div class="changelog-version">
               <span>v1.2.0</span>
-              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
             </div>
             <span class="changelog-date">6 Oktober 2026</span>
           </div>

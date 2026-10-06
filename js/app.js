@@ -603,11 +603,13 @@ function openPundiModal(pundiToEdit = null) {
     idInput.value = pundiToEdit.id;
     nameInput.value = pundiToEdit.name || '';
     descInput.value = pundiToEdit.description || '';
-    budgetInput.value = pundiToEdit.monthlyBudget || 0;
+    budgetInput.value = Currency.formatNumber(pundiToEdit.monthlyBudget) || '0';
     if (balanceField) balanceField.hidden = true; // balance updated via transactions
   } else {
     if (titleEl) titleEl.textContent = 'Buat Pundi Baru';
     idInput.value = '';
+    budgetInput.value = '';
+    balanceInput.value = '';
     if (balanceField) balanceField.hidden = false;
   }
 
@@ -872,7 +874,7 @@ document.querySelectorAll('[data-tx-type]').forEach(btn => {
    QUICK TRANSACTION MODAL (Income, Expense, Transfer)
    ========================================================================== */
 
-function openTxModal(txToEdit = null) {
+function openTxModal(txToEdit = null, defaultType = 'EXPENSE') {
   if (!dom.formTx) return;
   dom.formTx.reset();
 
@@ -892,7 +894,7 @@ function openTxModal(txToEdit = null) {
   if (txToEdit) {
     if (titleEl) titleEl.textContent = 'Edit Transaksi';
     idInput.value = txToEdit.id;
-    amountInput.value = txToEdit.amount || '';
+    amountInput.value = Currency.formatNumber(txToEdit.amount) || '';
     pundiSelect.value = txToEdit.pundiId || '';
     dateInput.value = txToEdit.date || DateUtil.todayString();
     noteInput.value = txToEdit.note || '';
@@ -913,9 +915,13 @@ function openTxModal(txToEdit = null) {
   } else {
     if (titleEl) titleEl.textContent = 'Tambah Transaksi';
     idInput.value = '';
+    amountInput.value = '';
     dateInput.value = DateUtil.todayString();
-    typeInputs[0].checked = true; // EXPENSE default
-    handleTxTypeChange('EXPENSE');
+    const activeType = ['INCOME', 'EXPENSE', 'TRANSFER'].includes(defaultType) ? defaultType : 'EXPENSE';
+    typeInputs.forEach(r => {
+      r.checked = (r.value === activeType);
+    });
+    handleTxTypeChange(activeType);
 
     // Pre-select first active pundi if none selected
     if (!pundiSelect.value && cachedPundis.length > 0) {
@@ -1240,13 +1246,15 @@ function openGoalModal(goalToEdit = null) {
     if (titleEl) titleEl.textContent = 'Edit Target Keuangan';
     idInput.value = goalToEdit.id;
     nameInput.value = goalToEdit.name || '';
-    targetInput.value = goalToEdit.targetAmount || 0;
-    currentInput.value = goalToEdit.currentAmount || 0;
+    targetInput.value = Currency.formatNumber(goalToEdit.targetAmount) || '0';
+    currentInput.value = Currency.formatNumber(goalToEdit.currentAmount) || '0';
     deadlineInput.value = goalToEdit.deadline || '';
     noteInput.value = goalToEdit.note || '';
   } else {
     if (titleEl) titleEl.textContent = 'Buat Target Baru';
     idInput.value = '';
+    targetInput.value = '';
+    currentInput.value = '';
   }
 
   openModal(dom.modalGoal);
@@ -1771,6 +1779,15 @@ function initProfileAndChangelog() {
     });
   }
 
+  // Pundi shortcut in Profile modal (Mobile optimization)
+  const btnProfilePundi = document.getElementById('profile-btn-pundi');
+  if (btnProfilePundi) {
+    btnProfilePundi.addEventListener('click', () => {
+      closeModal(dom.modalProfile || document.getElementById('modal-profile'));
+      navigateTo('pundi');
+    });
+  }
+
   // Changelog shortcut in Profile modal
   const btnProfileChangelog = document.getElementById('profile-btn-changelog');
   if (btnProfileChangelog) {
@@ -1889,7 +1906,26 @@ AuthService.requireAuth(async (user) => {
     });
   });
 
-  // FAB / Add Transaction buttons
+  // Attach live thousands separator (.) formatting to all amount inputs
+  Currency.attachAll(document);
+
+  // Quick Action Buttons (Pemasukan, Pengeluaran, Transfer)
+  document.querySelectorAll('.btn-quick-income').forEach(btn => {
+    btn.addEventListener('click', () => openTxModal(null, 'INCOME'));
+  });
+  document.querySelectorAll('.btn-quick-expense').forEach(btn => {
+    btn.addEventListener('click', () => openTxModal(null, 'EXPENSE'));
+  });
+  document.querySelectorAll('.btn-quick-transfer').forEach(btn => {
+    btn.addEventListener('click', () => openTxModal(null, 'TRANSFER'));
+  });
+
+  // Back button on Pundi view to return to dashboard
+  document.querySelectorAll('.btn-back-dashboard').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo('dashboard'));
+  });
+
+  // FAB / Add Transaction buttons (including center bottom nav button)
   document.querySelectorAll('.btn-open-tx-modal').forEach(btn => {
     btn.addEventListener('click', () => openTxModal());
   });

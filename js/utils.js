@@ -31,6 +31,17 @@ export const Currency = {
   },
 
   /**
+   * Format integer value into thousands-separated string (e.g. 50000 -> "50.000")
+   */
+  formatNumber(val) {
+    if (val === null || val === undefined || val === '') return '';
+    const clean = String(val).replace(/[^0-9]/g, '');
+    if (!clean) return '';
+    const num = parseInt(clean, 10);
+    return new Intl.NumberFormat('id-ID').format(num);
+  },
+
+  /**
    * Parse user input text into clean integer
    * e.g. "5.700.000" or "Rp 5.700.000" -> 5700000
    */
@@ -39,6 +50,89 @@ export const Currency = {
     if (!str) return 0;
     const clean = String(str).replace(/[^0-9]/g, '');
     return clean ? parseInt(clean, 10) : 0;
+  },
+
+  /**
+   * Attach live thousands separator formatting to an input element
+   */
+  attachFormatter(input) {
+    if (!input || input._hasCurrencyFormatter) return;
+    input._hasCurrencyFormatter = true;
+
+    // Handle backspace when cursor is directly after a '.' separator
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Backspace') {
+        const cursor = input.selectionStart;
+        if (cursor > 0 && input.selectionEnd === cursor) {
+          const charBefore = input.value[cursor - 1];
+          if (charBefore === '.' || charBefore === ',') {
+            e.preventDefault();
+            const val = input.value;
+            input.value = val.slice(0, cursor - 2) + val.slice(cursor - 1);
+            input.setSelectionRange(cursor - 2, cursor - 2);
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }
+      }
+    });
+
+    input.addEventListener('input', () => {
+      const rawVal = input.value;
+      const cursor = input.selectionStart || 0;
+
+      // Count how many digits exist before the cursor in rawVal
+      const digitsBeforeCursor = (rawVal.slice(0, cursor).match(/\d/g) || []).length;
+
+      // Extract raw digits
+      const cleanDigits = rawVal.replace(/\D/g, '');
+      if (!cleanDigits) {
+        input.value = '';
+        return;
+      }
+
+      // Convert to formatted integer with '.' separator
+      const num = parseInt(cleanDigits, 10);
+      const formatted = new Intl.NumberFormat('id-ID').format(num);
+      input.value = formatted;
+
+      // Restore cursor position matching digits count
+      let newCursor = 0;
+      let countedDigits = 0;
+      for (let i = 0; i < formatted.length; i++) {
+        if (/\d/.test(formatted[i])) {
+          countedDigits++;
+        }
+        if (countedDigits >= digitsBeforeCursor) {
+          newCursor = i + 1;
+          break;
+        }
+      }
+
+      if (countedDigits < digitsBeforeCursor) {
+        newCursor = formatted.length;
+      }
+
+      input.setSelectionRange(newCursor, newCursor);
+    });
+  },
+
+  /**
+   * Attach formatter to all matching currency input elements
+   */
+  attachAll(root = document) {
+    const selectors = [
+      '#tx-amount',
+      '#pundi-budget',
+      '#pundi-balance',
+      '#goal-target',
+      '#goal-current',
+      '#saving-amount',
+      '.input-amount',
+      'input[data-currency-input]'
+    ];
+    root.querySelectorAll(selectors.join(', ')).forEach(input => {
+      this.attachFormatter(input);
+    });
   }
 };
 
