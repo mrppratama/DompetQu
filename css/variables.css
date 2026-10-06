@@ -62,3 +62,40 @@
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --dur: 160ms;
 }
+
+/* DompetQu — Light Theme Tokens (Calm Light Finance) */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Base */
+  --bg: #F4F6F9;
+  --bg-2: #FFFFFF;
+  --surface: #FFFFFF;
+  --surface-2: #F0F3F6;
+  --surface-3: #E2E7ED;
+  --border: #D0D7DE;
+  --border-soft: #E3E7EC;
+
+  /* Brand — Crisp Vibrant Emerald Green */
+  --primary: #059669;
+  --primary-hover: #10B981;
+  --primary-dark: #047857;
+  --primary-soft: rgba(5, 150, 105, 0.12);
+  --on-primary: #FFFFFF;
+
+  /* Text */
+  --text: #1B1F24;
+  --text-2: #57606A;
+  --text-3: #6E7781;
+
+  /* Status */
+  --success: #059669;
+  --warning: #B45309;
+  --critical: #C2410C;
+  --danger: #DC2626;
+  --info: #1D4ED8;
+  --warning-soft: #FEF3C7;
+  --critical-soft: #FFEDD5;
+  --danger-soft: #FEE2E2;
+  --info-soft: #DBEAFE;
+}

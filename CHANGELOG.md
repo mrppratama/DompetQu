@@ -4,6 +4,20 @@ Semua perubahan dan pembaruan penting pada aplikasi DompetQu (Personal Finance P
 
 Format pencatatan merujuk pada standar [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
+## [1.4.0] - 2026-10-07
+
+### Fitur Baru & Peningkatan Desain
+- **Hierarki Header Saldo Dashboard Baru:**
+  - Posisi salam/greeting ditaruh di paling atas dengan animasi lambaian tangan (`👋 Hai, [Nama]`).
+  - Label `Total Saldo Dompet` ditempatkan tepat di bawah salam dengan ikon dompet dan typography rapi.
+  - Nominal total saldo dikemas dalam kartu hero `.dash-hero-header` dengan aksen radial glow yang elegan hingga batas nominal saldo.
+- **Dukungan Tema Mode Gelap & Mode Terang (Dark / Light Mode):**
+  - Opsi pemilihan mode tampilan disematkan langsung di dalam Menu Profil/User dengan tombol segmen interaktif (Gelap / Terang).
+  - Mode Terang didesain dengan palet warna *Calm Light Finance* berkontras tinggi dan ramah mata.
+  - Preferensi tema otomatis tersimpan di `localStorage` dan dimuat instan tanpa kedip (*zero-flicker*).
+
+---
+
 ## [1.3.1] - 2026-10-07
 
 ### Perbaikan Tampilan & Integrasi Alert Pundi

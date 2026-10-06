@@ -1822,6 +1822,19 @@ function initProfileAndChangelog() {
     });
   }
 
+  // Theme Switcher (Dark / Light Mode)
+  const savedTheme = localStorage.getItem('dompetqu_theme') || 'dark';
+  applyThemeUI(savedTheme, false);
+
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const selected = btn.getAttribute('data-theme-val');
+      applyThemeUI(selected, true);
+      showToast(`Mode ${selected === 'light' ? 'Terang' : 'Gelap'} diaktifkan.`, 'info', 1800);
+    });
+  });
+
   // Install app button
   const btnInstall = document.getElementById('btn-install-app');
   if (btnInstall) {
@@ -1857,6 +1870,57 @@ function initProfileAndChangelog() {
       });
     });
   }
+}
+
+function applyThemeUI(theme, save = false) {
+  const root = document.documentElement;
+  if (theme === 'light') {
+    root.setAttribute('data-theme', 'light');
+  } else {
+    root.removeAttribute('data-theme');
+  }
+
+  if (save) {
+    try {
+      localStorage.setItem('dompetqu_theme', theme);
+    } catch (e) {}
+  }
+
+  // Update theme toggle buttons in modal
+  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
+    btn.classList.toggle('is-active', btn.getAttribute('data-theme-val') === theme);
+  });
+
+  // Update text and icon in profile menu
+  const desc = document.getElementById('profile-theme-desc');
+  const icon = document.getElementById('theme-lucide-icon');
+  const iconWrap = document.getElementById('profile-theme-icon');
+  if (desc) {
+    desc.textContent = theme === 'light' ? 'Terang (Calm Light)' : 'Gelap (Calm Dark)';
+  }
+  if (iconWrap && icon) {
+    if (theme === 'light') {
+      iconWrap.style.background = 'rgba(245, 158, 11, 0.15)';
+      iconWrap.style.color = '#F59E0B';
+      icon.setAttribute('data-lucide', 'sun');
+    } else {
+      iconWrap.style.background = 'rgba(110, 159, 214, 0.15)';
+      iconWrap.style.color = '#6E9FD6';
+      icon.setAttribute('data-lucide', 'moon');
+    }
+  }
+
+  // Update in settings view if present
+  const stLabel = document.getElementById('settings-theme-label');
+  const stBadge = document.getElementById('settings-theme-badge');
+  if (stLabel) {
+    stLabel.textContent = theme === 'light' ? 'Calm Light Finance (Emerald Clean)' : 'Calm Dark Finance (Emerald Vibrant)';
+  }
+  if (stBadge) {
+    stBadge.textContent = theme === 'light' ? 'Terang' : 'Gelap';
+  }
+
+  refreshIcons();
 }
 
 /* ==========================================================================

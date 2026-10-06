@@ -19,6 +19,16 @@
   <!-- Chart.js & Lucide Icons -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Prevent theme flicker -->
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('dompetqu_theme');
+        if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
 
@@ -109,9 +119,18 @@
       <!-- ========================================== -->
       <section id="view-dashboard" class="view">
         <div class="dash-hero">
-          <span class="eyebrow">Total Saldo Dompet</span>
-          <p class="greeting" style="margin: 2px 0 6px;">Hai, <strong class="user-display-name">Pengguna</strong></p>
-          <div class="amount-hero" id="dash-total-balance">Rp0</div>
+          <!-- Hero Header: Greeting di atas, Label Saldo di bawahnya, dan Total Nominal yang Cantik -->
+          <div class="dash-hero-header">
+            <div class="dash-greeting">
+              <span class="greeting-wave">👋</span>
+              <span>Hai, <strong class="user-display-name">Pengguna</strong></span>
+            </div>
+            <div class="dash-balance-label">
+              <i data-lucide="wallet" class="icon" style="width: 14px; height: 14px;"></i>
+              <span>Total Saldo Dompet</span>
+            </div>
+            <div class="amount-hero" id="dash-total-balance">Rp0</div>
+          </div>
 
           <!-- Cards rapih dan elegan persis seperti di Halaman Laporan (Gambar 2) -->
           <dl class="summary-grid" style="margin-top: 18px;">
@@ -481,9 +500,9 @@
           <div class="setting-row">
             <div class="setting-text">
               <span class="setting-title">Versi PWA</span>
-              <span class="setting-desc">DompetQu v1.3.1</span>
+              <span class="setting-desc">DompetQu v1.4.0</span>
             </div>
-            <span class="badge">v1.3.1 Standalone</span>
+            <span class="badge">v1.4.0 Standalone</span>
           </div>
         </div>
 
@@ -903,6 +922,27 @@
             <i data-lucide="chevron-right" class="icon" style="width: 16px; height: 16px; color: var(--text-3);"></i>
           </button>
 
+          <!-- Pilihan Tema: Mode Gelap / Terang -->
+          <div class="profile-menu-item" id="profile-theme-row" style="cursor: default;">
+            <div class="profile-menu-item-icon" id="profile-theme-icon" style="background: rgba(110, 159, 214, 0.15); color: #6E9FD6;">
+              <i data-lucide="moon" class="icon" style="width: 18px; height: 18px;" id="theme-lucide-icon"></i>
+            </div>
+            <div class="profile-menu-item-text">
+              <span class="title">Mode Tampilan</span>
+              <span class="desc" id="profile-theme-desc">Gelap (Calm Dark)</span>
+            </div>
+            <div class="theme-switch-group">
+              <button type="button" class="theme-toggle-btn is-active" data-theme-val="dark" title="Mode Gelap" aria-label="Mode Gelap">
+                <i data-lucide="moon" style="width: 13px; height: 13px;"></i>
+                <span>Gelap</span>
+              </button>
+              <button type="button" class="theme-toggle-btn" data-theme-val="light" title="Mode Terang" aria-label="Mode Terang">
+                <i data-lucide="sun" style="width: 13px; height: 13px;"></i>
+                <span>Terang</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Install Aplikasi (PWA) -->
           <div class="profile-menu-item" id="profile-install-row" style="cursor: default;">
             <div class="profile-menu-item-icon" style="background: rgba(214, 168, 95, 0.15); color: #D6A85F;">
@@ -925,9 +965,9 @@
             </div>
             <div class="profile-menu-item-text">
               <span class="title">Versi Aplikasi</span>
-              <span class="desc">DompetQu v1.3.1 &bull; Klik untuk riwayat pembaruan</span>
+              <span class="desc">DompetQu v1.4.0 &bull; Klik untuk riwayat pembaruan</span>
             </div>
-            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.3.1</span>
+            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.4.0</span>
           </button>
         </div>
 
@@ -956,12 +996,26 @@
       </div>
 
       <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding-right: 4px;">
+        <!-- Version 1.4.0 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.4.0</span>
+              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
+            </div>
+            <span class="changelog-date">7 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Hierarki Header Saldo Baru:</strong> Salam/greeting ditaruh di atas (<code style="color:var(--primary); font-size:12px;">👋 Hai, [Nama]</code>), label <code style="color:var(--primary); font-size:12px;">Total Saldo Dompet</code> di bawahnya, dan nominal saldo utama tampil dalam kartu hero yang memukau.</li>
+            <li><strong>Mode Terang & Gelap (Light / Dark Mode):</strong> Fitur pemilihan mode tampilan di menu pengguna / profil modal untuk kenyamanan visual siang & malam.</li>
+          </ul>
+        </div>
+
         <!-- Version 1.3.1 -->
         <div class="changelog-card">
           <div class="changelog-head">
             <div class="changelog-version">
               <span>v1.3.1</span>
-              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
             </div>
             <span class="changelog-date">7 Oktober 2026</span>
           </div>
