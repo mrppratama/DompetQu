@@ -1,0 +1,1343 @@
+/**
+ * DompetQu - Main Application Controller
+ * SPA routing, Modals, CRUD event listeners, PWA support, & Quick Transaction modal.
+ */
+
+import { AuthService } from './auth.js';
+import { PundiService } from './pundi.js';
+import { TransactionService } from './transaction.js';
+import { CategoryService } from './category.js';
+import { GoalService } from './goals.js';
+import { ReportService } from './reports.js';
+import { DashboardManager } from './dashboard.js';
+import { SettingsService } from './settings.js';
+import { Validator } from './validation.js';
+import { showToast, initNetworkStatus, formatFriendlyError } from './notifications.js';
+import { Currency, DateUtil, BudgetUtil, debounce, escapeHtml, refreshIcons } from './utils.js';
+
+let currentUser = null;
+let currentView = 'dashboard';
+let cachedPundis = [];
+let cachedCategories = [];
+let cachedTransactions = [];
+let cachedGoals = [];
+
+// DOM references
+const dom = {
+  bootScreen: document.getElementById('boot-screen'),
+  appShell: document.getElementById('app-shell'),
+  userDisplayNames: document.querySelectorAll('.user-display-name'),
+  userEmails: document.querySelectorAll('.user-display-email'),
+  topbarTitle: document.getElementById('topbar-title'),
+
+  // Views
+  views: {
+    dashboard: document.getElementById('view-dashboard'),
+    pundi: document.getElementById('view-pundi'),
+    transactions: document.getElementById('view-transactions'),
+    goals: document.getElementById('view-goals'),
+    reports: document.getElementById('view-reports'),
+    settings: document.getElementById('view-settings')
+  },
+
+  // Navigation Links
+  navLinks: document.querySelectorAll('[data-view]'),
+
+  // Dashboard elements
+  dash: {
+    totalBalanceEl: document.getElementById('dash-total-balance'),
+    monthIncomeEl: document.getElementById('dash-month-income'),
+    monthExpenseEl: document.getElementById('dash-month-expense'),
+    netCashFlowEl: document.getElementById('dash-net-cash'),
+    widgetIncome: document.getElementById('widget-income'),
+    widgetExpense: document.getElementById('widget-expense'),
+    widgetNet: document.getElementById('widget-net'),
+    warningsContainer: document.getElementById('dash-budget-warnings'),
+    pundiListContainer: document.getElementById('dash-pundi-list'),
+    chartCanvas: document.getElementById('dash-expense-chart'),
+    chartLegend: document.getElementById('dash-expense-legend'),
+    recentTxContainer: document.getElementById('dash-recent-tx')
+  },
+
+  // Modals & Dialogs
+  modalTx: document.getElementById('modal-tx'),
+  formTx: document.getElementById('form-tx'),
+  modalPundi: document.getElementById('modal-pundi'),
+  formPundi: document.getElementById('form-pundi'),
+  modalGoal: document.getElementById('modal-goal'),
+  formGoal: document.getElementById('form-goal'),
+  modalAddGoalSaving: document.getElementById('modal-goal-saving'),
+  formGoalSaving: document.getElementById('form-goal-saving'),
+  modalConfirm: document.getElementById('modal-confirm'),
+  btnConfirmAction: document.getElementById('btn-confirm-action'),
+  confirmMessage: document.getElementById('confirm-message'),
+  confirmSub: document.getElementById('confirm-sub')
+};
+
+/**
+ * Open native HTML5 modal dialog
+ */
+function openModal(modalEl) {
+  if (modalEl && typeof modalEl.showModal === 'function') {
+    modalEl.showModal();
+    refreshIcons();
+  }
+}
+
+/**
+ * Close modal
+ */
+function closeModal(modalEl) {
+  if (modalEl && typeof modalEl.close === 'function') {
+    modalEl.close();
+  }
+}
+
+/**
+ * Show confirmation dialog
+ */
+let pendingConfirmCallback = null;
+function showConfirm({ title, message, subtext, actionLabel, isDanger = true, onConfirm }) {
+  if (!dom.modalConfirm) return;
+  document.getElementById('confirm-title').textContent = title || 'Konfirmasi';
+  dom.confirmMessage.textContent = message || 'Apakah Anda yakin?';
+  dom.confirmSub.textContent = subtext || '';
+  dom.btnConfirmAction.textContent = actionLabel || 'Lanjutkan';
+  dom.btnConfirmAction.className = isDanger ? 'btn btn-danger' : 'btn btn-primary';
+
+  pendingConfirmCallback = onConfirm;
+  openModal(dom.modalConfirm);
+}
+
+if (dom.btnConfirmAction) {
+  dom.btnConfirmAction.addEventListener('click', async () => {
+    if (pendingConfirmCallback) {
+      dom.btnConfirmAction.disabled = true;
+      try {
+        await pendingConfirmCallback();
+      } finally {
+        dom.btnConfirmAction.disabled = false;
+        closeModal(dom.modalConfirm);
+        pendingConfirmCallback = null;
+      }
+    } else {
+      closeModal(dom.modalConfirm);
+    }
+  });
+}
+
+/**
+ * Switch Active View in SPA
+ */
+export function navigateTo(viewName) {
+  currentView = viewName;
+  window.location.hash = viewName;
+
+  // Toggle view visibility
+  Object.keys(dom.views).forEach(key => {
+    if (dom.views[key]) {
+      dom.views[key].hidden = (key !== viewName);
+    }
+  });
+
+  // Highlight active nav links in bottom bar and sidebar
+  dom.navLinks.forEach(link => {
+    const target = link.getAttribute('data-view');
+    link.classList.toggle('is-active', target === viewName);
+  });
+
+  // Update Topbar title
+  const titles = {
+    dashboard: 'DompetQu',
+    pundi: 'Pundi-Pundi',
+    transactions: 'Transaksi',
+    goals: 'Target Keuangan',
+    reports: 'Laporan Keuangan',
+    settings: 'Pengaturan'
+  };
+  if (dom.topbarTitle) {
+    dom.topbarTitle.textContent = titles[viewName] || 'DompetQu';
+  }
+
+  // Refresh view contents
+  loadCurrentViewData();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/**
+ * Load appropriate view data on switch
+ */
+async function loadCurrentViewData() {
+  if (!currentUser) return;
+
+  try {
+    if (currentView === 'dashboard') {
+      await DashboardManager.loadDashboard(currentUser.uid, dom.dash);
+    } else if (currentView === 'pundi') {
+      await loadPundiView();
+    } else if (currentView === 'transactions') {
+      await loadTransactionsView();
+    } else if (currentView === 'goals') {
+      await loadGoalsView();
+    } else if (currentView === 'reports') {
+      await loadReportsView();
+    } else if (currentView === 'settings') {
+      loadSettingsView();
+    }
+  } catch (err) {
+    console.error(`Error loading view ${currentView}:`, err);
+    showToast(formatFriendlyError(err), 'error');
+  } finally {
+    refreshIcons();
+  }
+}
+
+/**
+ * Preload user baseline caches
+ */
+async function refreshBaselineData() {
+  if (!currentUser) return;
+  const [pundis, categories] = await Promise.all([
+    PundiService.getPundis(currentUser.uid, true),
+    CategoryService.getCategories(currentUser.uid)
+  ]);
+  cachedPundis = pundis;
+  cachedCategories = categories;
+  populatePundiSelects();
+  populateCategorySelects();
+}
+
+/**
+ * Fill select dropdowns with available active Pundis and Categories
+ */
+function populatePundiSelects() {
+  const activePundis = cachedPundis.filter(p => !p.isArchived);
+  const selects = document.querySelectorAll('select[data-pundi-select]');
+
+  selects.forEach(select => {
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">Pilih Pundi...</option>' +
+      activePundis.map(p => `
+        <option value="${p.id}">${escapeHtml(p.name)} (${Currency.format(p.balance || 0)})</option>
+      `).join('');
+    if (currentVal) select.value = currentVal;
+  });
+}
+
+function populateCategorySelects(selectedType = 'EXPENSE') {
+  const selects = document.querySelectorAll('select[data-category-select]');
+  const filtered = cachedCategories.filter(c => !c.isArchived && c.type === selectedType);
+
+  selects.forEach(select => {
+    const currentVal = select.value;
+    select.innerHTML = '<option value="">Pilih Kategori...</option>' +
+      filtered.map(c => `
+        <option value="${c.id}">${escapeHtml(c.name)}</option>
+      `).join('');
+    if (currentVal) select.value = currentVal;
+  });
+}
+
+/* ==========================================================================
+   VIEW 1: PUNDI MANAGEMENT
+   ========================================================================== */
+
+async function loadPundiView() {
+  const pundiContainer = document.getElementById('pundi-list-cards');
+  const archivedContainer = document.getElementById('pundi-archived-list');
+  if (!pundiContainer) return;
+
+  cachedPundis = await PundiService.getPundis(currentUser.uid, true);
+
+  const { start, end } = DateUtil.getCurrentMonthRange();
+  const monthTx = await TransactionService.getTransactions(currentUser.uid, {
+    startDate: start.toISOString().split('T')[0],
+    endDate: end.toISOString().split('T')[0],
+    type: 'EXPENSE'
+  });
+
+  const expenseMap = {};
+  monthTx.forEach(t => {
+    expenseMap[t.pundiId] = (expenseMap[t.pundiId] || 0) + Number(t.amount || 0);
+  });
+
+  const active = cachedPundis.filter(p => !p.isArchived);
+  const archived = cachedPundis.filter(p => p.isArchived);
+
+  if (active.length === 0) {
+    pundiContainer.innerHTML = `
+      <div class="card empty" style="grid-column: 1 / -1;">
+        <div class="empty-icon"><i data-lucide="wallet" style="width:24px;height:24px;"></i></div>
+        <p class="empty-title">Belum ada Pundi aktif</p>
+        <p class="empty-text">Buat Pundi untuk membagi uang Anda ke pos-pos kebutuhan.</p>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-add-pundi-empty">Buat Pundi Pertama</button>
+      </div>
+    `;
+    const btnEmpty = document.getElementById('btn-add-pundi-empty');
+    if (btnEmpty) btnEmpty.addEventListener('click', () => openPundiModal());
+  } else {
+    pundiContainer.innerHTML = active.map(p => {
+      const expense = expenseMap[p.id] || 0;
+      const budget = Number(p.monthlyBudget || 0);
+      const usage = BudgetUtil.calculateUsage(expense, budget);
+      const status = BudgetUtil.getStatus(usage);
+      const remainingBudget = Math.max(0, budget - expense);
+
+      return `
+        <div class="card pundi-card" data-pundi-id="${p.id}">
+          <div class="card-head">
+            <div class="avatar" style="background:${p.color || '#5FBF8F'}25; color:${p.color || '#5FBF8F'};">
+              <i data-lucide="${escapeHtml(p.icon || 'wallet')}" style="width:20px;height:20px;"></i>
+            </div>
+            <div class="card-head-title">
+              <h3>${escapeHtml(p.name)}</h3>
+              <p>${escapeHtml(p.description || 'Tidak ada catatan')}</p>
+            </div>
+            <div class="row-actions">
+              <button type="button" class="icon-btn icon-btn-sm btn-edit-pundi" data-pundi-id="${p.id}" aria-label="Edit Pundi">
+                <i data-lucide="pencil" style="width:15px;height:15px;"></i>
+              </button>
+              <button type="button" class="icon-btn icon-btn-sm btn-archive-pundi" data-pundi-id="${p.id}" aria-label="Arsipkan Pundi">
+                <i data-lucide="archive" style="width:15px;height:15px;"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="kv">
+            <span class="kv-label">Saldo Saat Ini</span>
+            <span class="kv-value">${Currency.format(p.balance || 0)}</span>
+          </div>
+
+          <div class="progress ${status.class}">
+            <span style="width: ${Math.min(100, usage)}%;"></span>
+          </div>
+
+          <div class="meta-row">
+            <span>Budget: <strong class="num">${Currency.format(budget)}</strong></span>
+            <span>Terpakai: <strong class="num">${usage}%</strong> (${Currency.format(expense)})</span>
+          </div>
+
+          <div class="meta-row" style="margin-top:-4px;">
+            <span>Sisa Budget: <strong class="num">${Currency.format(remainingBudget)}</strong></span>
+            <span class="badge ${status.badgeClass}">${status.label}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  // Render archived pundis
+  if (archivedContainer) {
+    const archSection = document.getElementById('archived-pundi-section');
+    if (archived.length === 0) {
+      if (archSection) archSection.hidden = true;
+    } else {
+      if (archSection) archSection.hidden = false;
+      archivedContainer.innerHTML = archived.map(p => `
+        <div class="card pundi-row is-archived">
+          <div class="avatar avatar-sm" style="background:${p.color || '#737A83'}20; color:${p.color || '#737A83'};">
+            <i data-lucide="${escapeHtml(p.icon || 'wallet')}" style="width:16px;height:16px;"></i>
+          </div>
+          <div class="pundi-main" style="min-width:0;">
+            <div class="pundi-row-name">${escapeHtml(p.name)} <span class="badge">Diarsipkan</span></div>
+            <div class="pundi-row-sub">Saldo: ${Currency.format(p.balance || 0)}</div>
+          </div>
+          <button type="button" class="btn btn-secondary btn-sm btn-unarchive-pundi" data-pundi-id="${p.id}">Pulihkan</button>
+        </div>
+      `).join('');
+    }
+  }
+
+  // Bind actions
+  document.querySelectorAll('.btn-edit-pundi').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-pundi-id');
+      const item = cachedPundis.find(p => p.id === id);
+      if (item) openPundiModal(item);
+    });
+  });
+
+  document.querySelectorAll('.btn-archive-pundi').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-pundi-id');
+      const item = cachedPundis.find(p => p.id === id);
+      if (!item) return;
+
+      showConfirm({
+        title: 'Arsipkan Pundi',
+        message: `Arsipkan Pundi "${item.name}"?`,
+        subtext: 'Pundi ini tidak akan muncul saat membuat transaksi baru, tetapi riwayat transaksi tetap tersimpan.',
+        actionLabel: 'Arsipkan',
+        isDanger: false,
+        onConfirm: async () => {
+          await PundiService.setArchived(currentUser.uid, id, true);
+          showToast(`Pundi ${item.name} berhasil diarsipkan.`, 'info');
+          await loadPundiView();
+          await refreshBaselineData();
+        }
+      });
+    });
+  });
+
+  document.querySelectorAll('.btn-unarchive-pundi').forEach(b => {
+    b.addEventListener('click', async (e) => {
+      const id = e.currentTarget.getAttribute('data-pundi-id');
+      await PundiService.setArchived(currentUser.uid, id, false);
+      showToast('Pundi berhasil dipulihkan.', 'success');
+      await loadPundiView();
+      await refreshBaselineData();
+    });
+  });
+}
+
+function openPundiModal(pundiToEdit = null) {
+  if (!dom.formPundi) return;
+  dom.formPundi.reset();
+
+  const titleEl = document.getElementById('modal-pundi-title');
+  const idInput = document.getElementById('pundi-id');
+  const nameInput = document.getElementById('pundi-name');
+  const descInput = document.getElementById('pundi-desc');
+  const budgetInput = document.getElementById('pundi-budget');
+  const balanceInput = document.getElementById('pundi-balance');
+  const balanceField = document.getElementById('pundi-balance-field');
+
+  if (pundiToEdit) {
+    if (titleEl) titleEl.textContent = 'Edit Pundi';
+    idInput.value = pundiToEdit.id;
+    nameInput.value = pundiToEdit.name || '';
+    descInput.value = pundiToEdit.description || '';
+    budgetInput.value = pundiToEdit.monthlyBudget || 0;
+    if (balanceField) balanceField.hidden = true; // balance updated via transactions
+  } else {
+    if (titleEl) titleEl.textContent = 'Buat Pundi Baru';
+    idInput.value = '';
+    if (balanceField) balanceField.hidden = false;
+  }
+
+  openModal(dom.modalPundi);
+}
+
+// Pundi Form submit
+if (dom.formPundi) {
+  dom.formPundi.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btnSubmit = dom.formPundi.querySelector('button[type="submit"]');
+    const id = document.getElementById('pundi-id').value;
+    const name = document.getElementById('pundi-name').value;
+    const desc = document.getElementById('pundi-desc').value;
+    const budget = Currency.parse(document.getElementById('pundi-budget').value);
+    const balance = Currency.parse(document.getElementById('pundi-balance').value);
+    const icon = dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'wallet';
+    const color = dom.formPundi.querySelector('input[name="pundi_color"]:checked')?.value || '#5FBF8F';
+
+    const val = Validator.validatePundi({ name, monthlyBudget: budget });
+    if (!val.isValid) {
+      showToast(val.firstError, 'error');
+      return;
+    }
+
+    btnSubmit.disabled = true;
+    try {
+      if (id) {
+        await PundiService.updatePundi(currentUser.uid, id, {
+          name,
+          description: desc,
+          monthlyBudget: budget,
+          icon,
+          color
+        });
+        showToast('Pundi berhasil diperbarui.', 'success');
+      } else {
+        await PundiService.createPundi(currentUser.uid, {
+          name,
+          description: desc,
+          monthlyBudget: budget,
+          initialBalance: balance,
+          icon,
+          color
+        });
+        showToast('Pundi baru berhasil dibuat.', 'success');
+      }
+      closeModal(dom.modalPundi);
+      await loadPundiView();
+      await refreshBaselineData();
+    } catch (err) {
+      showToast(formatFriendlyError(err), 'error');
+    } finally {
+      btnSubmit.disabled = false;
+    }
+  });
+}
+
+/* ==========================================================================
+   VIEW 2: TRANSACTIONS MANAGEMENT (Search, Filter, Edit, Delete)
+   ========================================================================== */
+
+let txFilterState = {
+  period: 'month', // 'today', '7days', 'month', 'lastmonth', 'custom'
+  type: '',        // '', 'EXPENSE', 'INCOME', 'TRANSFER'
+  pundiId: '',
+  categoryId: '',
+  searchQuery: '',
+  customStart: '',
+  customEnd: ''
+};
+
+async function loadTransactionsView() {
+  const container = document.getElementById('tx-list-container');
+  const countEl = document.getElementById('tx-count');
+  const totalAmtEl = document.getElementById('tx-total-filtered');
+  if (!container) return;
+
+  // Compute date range based on period filter
+  let startDate = null;
+  let endDate = null;
+
+  if (txFilterState.period === 'today') {
+    startDate = DateUtil.todayString();
+    endDate = DateUtil.todayString();
+  } else if (txFilterState.period === '7days') {
+    const r = DateUtil.getLast7DaysRange();
+    startDate = r.start.toISOString().split('T')[0];
+    endDate = r.end.toISOString().split('T')[0];
+  } else if (txFilterState.period === 'month') {
+    const r = DateUtil.getCurrentMonthRange();
+    startDate = r.start.toISOString().split('T')[0];
+    endDate = r.end.toISOString().split('T')[0];
+  } else if (txFilterState.period === 'lastmonth') {
+    const r = DateUtil.getLastMonthRange();
+    startDate = r.start.toISOString().split('T')[0];
+    endDate = r.end.toISOString().split('T')[0];
+  } else if (txFilterState.period === 'custom') {
+    startDate = txFilterState.customStart || null;
+    endDate = txFilterState.customEnd || null;
+  }
+
+  const transactions = await TransactionService.getTransactions(currentUser.uid, {
+    startDate,
+    endDate,
+    type: txFilterState.type || null,
+    pundiId: txFilterState.pundiId || null,
+    categoryId: txFilterState.categoryId || null
+  });
+
+  // Client-side search query filtering
+  let filtered = transactions;
+  if (txFilterState.searchQuery) {
+    const q = txFilterState.searchQuery.toLowerCase().trim();
+    const catMap = {};
+    cachedCategories.forEach(c => { catMap[c.id] = (c.name || '').toLowerCase(); });
+    const pundiMap = {};
+    cachedPundis.forEach(p => { pundiMap[p.id] = (p.name || '').toLowerCase(); });
+
+    filtered = filtered.filter(t => {
+      const note = (t.note || '').toLowerCase();
+      const catName = catMap[t.categoryId] || '';
+      const pundiName = pundiMap[t.pundiId] || '';
+      const amtStr = String(t.amount || '');
+      return note.includes(q) || catName.includes(q) || pundiName.includes(q) || amtStr.includes(q);
+    });
+  }
+
+  cachedTransactions = filtered;
+
+  if (countEl) countEl.textContent = `${filtered.length} transaksi`;
+  if (totalAmtEl) {
+    const sumExpense = filtered.filter(t => t.type === 'EXPENSE').reduce((a, b) => a + Number(b.amount || 0), 0);
+    const sumIncome = filtered.filter(t => t.type === 'INCOME').reduce((a, b) => a + Number(b.amount || 0), 0);
+    totalAmtEl.textContent = `Pemasukan: ${Currency.format(sumIncome)} | Pengeluaran: ${Currency.format(sumExpense)}`;
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="card empty">
+        <div class="empty-icon"><i data-lucide="search-x" style="width:24px;height:24px;"></i></div>
+        <p class="empty-title">Tidak ada transaksi ditemukan</p>
+        <p class="empty-text">Coba ubah filter atau kata kunci pencarian Anda.</p>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-quick-add-from-tx">Tambah Transaksi</button>
+      </div>
+    `;
+    const btnAdd = document.getElementById('btn-quick-add-from-tx');
+    if (btnAdd) btnAdd.addEventListener('click', () => openTxModal());
+    return;
+  }
+
+  // Group transactions by date
+  const groups = {};
+  filtered.forEach(t => {
+    const dKey = t.date || 'Lainnya';
+    if (!groups[dKey]) groups[dKey] = [];
+    groups[dKey].push(t);
+  });
+
+  const catMap = {};
+  cachedCategories.forEach(c => { catMap[c.id] = c; });
+  const pundiMap = {};
+  cachedPundis.forEach(p => { pundiMap[p.id] = p; });
+
+  const dateKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  container.innerHTML = dateKeys.map(dateKey => {
+    const list = groups[dateKey];
+    const formattedDate = dateKey !== 'Lainnya' ? DateUtil.formatDate(dateKey, true) : 'Tanpa Tanggal';
+
+    return `
+      <div class="tx-group">
+        <div class="tx-group-head">
+          <span>${formattedDate}</span>
+          <span class="subtle">${list.length} item</span>
+        </div>
+        <div class="card card-flush">
+          <ul class="list">
+            ${list.map(t => {
+              const cat = catMap[t.categoryId] || { name: 'Kategori', icon: 'tag' };
+              const pundi = pundiMap[t.pundiId] || { name: 'Pundi' };
+              const destPundi = t.destinationPundiId ? pundiMap[t.destinationPundiId] : null;
+
+              let iconName = cat.icon || 'arrow-left-right';
+              let subtitle = `${escapeHtml(pundi.name)}`;
+              if (t.type === 'INCOME') {
+                iconName = 'trending-up';
+                subtitle = `Ke: ${escapeHtml(pundi.name)}`;
+              } else if (t.type === 'TRANSFER') {
+                iconName = 'arrow-right-left';
+                subtitle = `${escapeHtml(pundi.name)} &rarr; ${destPundi ? escapeHtml(destPundi.name) : 'Tujuan'}`;
+              } else {
+                subtitle = `${escapeHtml(cat.name)} &bull; ${escapeHtml(pundi.name)}`;
+              }
+
+              return `
+                <li>
+                  <button type="button" class="tx-row btn-open-tx-detail" data-tx-id="${t.id}">
+                    <div class="avatar avatar-sm tx-icon-${t.type}">
+                      <i data-lucide="${iconName}" style="width:16px;height:16px;"></i>
+                    </div>
+                    <div class="tx-main">
+                      <div class="tx-title">${escapeHtml(t.note || cat.name || 'Transaksi')}</div>
+                      <div class="tx-meta">${subtitle}</div>
+                    </div>
+                    <div class="tx-amount amount-${t.type}">${Currency.formatSigned(t.type, t.amount)}</div>
+                  </button>
+                </li>
+              `;
+            }).join('')}
+          </ul>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Bind click transaction row to open edit / delete options
+  container.querySelectorAll('.btn-open-tx-detail').forEach(row => {
+    row.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-tx-id');
+      const item = cachedTransactions.find(t => t.id === id);
+      if (item) openTxModal(item);
+    });
+  });
+}
+
+// Live search with debounce
+const txSearchInput = document.getElementById('tx-search-input');
+if (txSearchInput) {
+  txSearchInput.addEventListener('input', debounce((e) => {
+    txFilterState.searchQuery = e.target.value;
+    loadTransactionsView();
+  }, 250));
+}
+
+// Period chips
+document.querySelectorAll('[data-tx-period]').forEach(chip => {
+  chip.addEventListener('click', (e) => {
+    document.querySelectorAll('[data-tx-period]').forEach(c => c.setAttribute('aria-pressed', 'false'));
+    chip.setAttribute('aria-pressed', 'true');
+    const p = chip.getAttribute('data-tx-period');
+    txFilterState.period = p;
+
+    const customFields = document.getElementById('tx-custom-date-fields');
+    if (customFields) customFields.hidden = (p !== 'custom');
+
+    loadTransactionsView();
+  });
+});
+
+// Type filter buttons
+document.querySelectorAll('[data-tx-type]').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    document.querySelectorAll('[data-tx-type]').forEach(b => b.setAttribute('aria-pressed', 'false'));
+    btn.setAttribute('aria-pressed', 'true');
+    txFilterState.type = btn.getAttribute('data-tx-type') || '';
+    loadTransactionsView();
+  });
+});
+
+/* ==========================================================================
+   QUICK TRANSACTION MODAL (Income, Expense, Transfer)
+   ========================================================================== */
+
+function openTxModal(txToEdit = null) {
+  if (!dom.formTx) return;
+  dom.formTx.reset();
+
+  const titleEl = document.getElementById('modal-tx-title');
+  const idInput = document.getElementById('tx-id');
+  const typeInputs = dom.formTx.querySelectorAll('input[name="tx_type"]');
+  const amountInput = document.getElementById('tx-amount');
+  const pundiSelect = document.getElementById('tx-pundi');
+  const destPundiSelect = document.getElementById('tx-dest-pundi');
+  const catSelect = document.getElementById('tx-category');
+  const dateInput = document.getElementById('tx-date');
+  const noteInput = document.getElementById('tx-note');
+  const btnDelete = document.getElementById('btn-delete-tx');
+
+  populatePundiSelects();
+
+  if (txToEdit) {
+    if (titleEl) titleEl.textContent = 'Edit Transaksi';
+    idInput.value = txToEdit.id;
+    amountInput.value = txToEdit.amount || '';
+    pundiSelect.value = txToEdit.pundiId || '';
+    dateInput.value = txToEdit.date || DateUtil.todayString();
+    noteInput.value = txToEdit.note || '';
+
+    typeInputs.forEach(r => {
+      r.checked = (r.value === txToEdit.type);
+    });
+
+    handleTxTypeChange(txToEdit.type);
+
+    if (txToEdit.type === 'TRANSFER') {
+      destPundiSelect.value = txToEdit.destinationPundiId || '';
+    } else {
+      catSelect.value = txToEdit.categoryId || '';
+    }
+
+    if (btnDelete) btnDelete.hidden = false;
+  } else {
+    if (titleEl) titleEl.textContent = 'Tambah Transaksi';
+    idInput.value = '';
+    dateInput.value = DateUtil.todayString();
+    typeInputs[0].checked = true; // EXPENSE default
+    handleTxTypeChange('EXPENSE');
+    if (btnDelete) btnDelete.hidden = true;
+  }
+
+  openModal(dom.modalTx);
+}
+
+function handleTxTypeChange(selectedType) {
+  const catField = document.getElementById('tx-field-category');
+  const destField = document.getElementById('tx-field-destination');
+  const pundiLabel = document.getElementById('tx-pundi-label');
+
+  populateCategorySelects(selectedType);
+
+  if (selectedType === 'TRANSFER') {
+    if (catField) catField.hidden = true;
+    if (destField) destField.hidden = false;
+    if (pundiLabel) pundiLabel.textContent = 'Pundi Sumber';
+  } else if (selectedType === 'INCOME') {
+    if (catField) catField.hidden = false;
+    if (destField) destField.hidden = true;
+    if (pundiLabel) pundiLabel.textContent = 'Masuk ke Pundi';
+  } else {
+    // EXPENSE
+    if (catField) catField.hidden = false;
+    if (destField) destField.hidden = true;
+    if (pundiLabel) pundiLabel.textContent = 'Bayar dari Pundi';
+  }
+}
+
+// Listen to segmented radio change for tx type
+if (dom.formTx) {
+  dom.formTx.querySelectorAll('input[name="tx_type"]').forEach(radio => {
+    radio.addEventListener('change', (e) => {
+      handleTxTypeChange(e.target.value);
+    });
+  });
+
+  // Transaction form submit
+  dom.formTx.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btnSubmit = dom.formTx.querySelector('button[type="submit"]');
+    const id = document.getElementById('tx-id').value;
+    const type = dom.formTx.querySelector('input[name="tx_type"]:checked')?.value || 'EXPENSE';
+    const amount = Currency.parse(document.getElementById('tx-amount').value);
+    const pundiId = document.getElementById('tx-pundi').value;
+    const destinationPundiId = document.getElementById('tx-dest-pundi')?.value || null;
+    const categoryId = document.getElementById('tx-category')?.value || null;
+    const date = document.getElementById('tx-date').value;
+    const note = document.getElementById('tx-note').value;
+
+    const sourcePundi = cachedPundis.find(p => p.id === pundiId);
+    const sourceBalance = sourcePundi ? Number(sourcePundi.balance || 0) : 0;
+
+    // Validation
+    const val = Validator.validateTransaction({
+      type,
+      amount,
+      pundiId,
+      destinationPundiId,
+      categoryId,
+      date,
+      sourcePundiBalance: id ? undefined : sourceBalance // check strict balance on new transactions
+    });
+
+    if (!val.isValid) {
+      showToast(val.firstError, 'error');
+      return;
+    }
+
+    btnSubmit.disabled = true;
+    try {
+      if (id) {
+        await TransactionService.updateTransaction(currentUser.uid, id, {
+          type,
+          amount,
+          pundiId,
+          destinationPundiId,
+          categoryId,
+          date,
+          note
+        });
+        showToast('Transaksi berhasil diperbarui.', 'success');
+      } else {
+        await TransactionService.createTransaction(currentUser.uid, {
+          type,
+          amount,
+          pundiId,
+          destinationPundiId,
+          categoryId,
+          date,
+          note
+        });
+        showToast('Transaksi berhasil disimpan.', 'success');
+      }
+
+      closeModal(dom.modalTx);
+      await refreshBaselineData();
+      await loadCurrentViewData();
+    } catch (err) {
+      showToast(formatFriendlyError(err), 'error');
+    } finally {
+      btnSubmit.disabled = false;
+    }
+  });
+
+  // Delete transaction button inside modal
+  const btnDelete = document.getElementById('btn-delete-tx');
+  if (btnDelete) {
+    btnDelete.addEventListener('click', () => {
+      const id = document.getElementById('tx-id').value;
+      const amount = Currency.parse(document.getElementById('tx-amount').value);
+      if (!id) return;
+
+      showConfirm({
+        title: 'Hapus Transaksi?',
+        message: `Transaksi senilai ${Currency.format(amount)} akan dihapus.`,
+        subtext: 'Saldo Pundi Anda akan disesuaikan kembali ke kondisi semula.',
+        actionLabel: 'Hapus',
+        isDanger: true,
+        onConfirm: async () => {
+          await TransactionService.deleteTransaction(currentUser.uid, id);
+          closeModal(dom.modalTx);
+          showToast('Transaksi berhasil dihapus dan saldo dipulihkan.', 'info');
+          await refreshBaselineData();
+          await loadCurrentViewData();
+        }
+      });
+    });
+  }
+}
+
+/* ==========================================================================
+   VIEW 3: GOALS (Target Keuangan)
+   ========================================================================== */
+
+async function loadGoalsView() {
+  const container = document.getElementById('goals-grid');
+  if (!container) return;
+
+  cachedGoals = await GoalService.getGoals(currentUser.uid);
+
+  if (cachedGoals.length === 0) {
+    container.innerHTML = `
+      <div class="card empty" style="grid-column: 1 / -1;">
+        <div class="empty-icon"><i data-lucide="target" style="width:24px;height:24px;"></i></div>
+        <p class="empty-title">Belum ada target keuangan</p>
+        <p class="empty-text">Tentukan tujuan tabungan seperti dana darurat, liburan, atau kendaraan.</p>
+        <button type="button" class="btn btn-primary btn-sm" id="btn-add-goal-empty">Buat Target</button>
+      </div>
+    `;
+    const btnEmpty = document.getElementById('btn-add-goal-empty');
+    if (btnEmpty) btnEmpty.addEventListener('click', () => openGoalModal());
+    return;
+  }
+
+  container.innerHTML = cachedGoals.map(g => {
+    const target = Number(g.targetAmount || 0);
+    const current = Number(g.currentAmount || 0);
+    const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+    const remaining = Math.max(0, target - current);
+
+    return `
+      <div class="card goal-card" data-goal-id="${g.id}">
+        <div class="card-head">
+          <div class="avatar avatar-round"><i data-lucide="target" style="width:18px;height:18px;"></i></div>
+          <div class="card-head-title">
+            <h3>${escapeHtml(g.name)}</h3>
+            <p>${g.deadline ? `Tenggat: ${DateUtil.formatDate(g.deadline)}` : 'Tanpa tenggat waktu'}</p>
+          </div>
+          <div class="row-actions">
+            <button type="button" class="icon-btn icon-btn-sm btn-edit-goal" data-goal-id="${g.id}" aria-label="Edit Target">
+              <i data-lucide="pencil" style="width:15px;height:15px;"></i>
+            </button>
+            <button type="button" class="icon-btn icon-btn-sm btn-delete-goal" data-goal-id="${g.id}" aria-label="Hapus Target">
+              <i data-lucide="trash-2" style="width:15px;height:15px;"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="kv">
+          <span class="kv-label">Terkumpul</span>
+          <span class="kv-value text-income">${Currency.format(current)}</span>
+        </div>
+
+        <div class="progress is-info">
+          <span style="width: ${pct}%;"></span>
+        </div>
+
+        <div class="meta-row">
+          <span>Target: <strong class="num">${Currency.format(target)}</strong></span>
+          <span>Progress: <strong class="num">${pct}%</strong></span>
+        </div>
+
+        <div class="meta-row" style="margin-top:-4px;">
+          <span>Kurang: <strong class="num">${Currency.format(remaining)}</strong></span>
+          <button type="button" class="btn btn-secondary btn-sm btn-add-saving" data-goal-id="${g.id}">
+            + Tabung
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Bind actions
+  container.querySelectorAll('.btn-edit-goal').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-goal-id');
+      const g = cachedGoals.find(item => item.id === id);
+      if (g) openGoalModal(g);
+    });
+  });
+
+  container.querySelectorAll('.btn-delete-goal').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-goal-id');
+      const g = cachedGoals.find(item => item.id === id);
+      if (!g) return;
+
+      showConfirm({
+        title: 'Hapus Target Keuangan?',
+        message: `Hapus target "${g.name}"?`,
+        subtext: 'Data target akan dihapus.',
+        actionLabel: 'Hapus Target',
+        isDanger: true,
+        onConfirm: async () => {
+          await GoalService.deleteGoal(currentUser.uid, id);
+          showToast('Target keuangan berhasil dihapus.', 'info');
+          await loadGoalsView();
+        }
+      });
+    });
+  });
+
+  container.querySelectorAll('.btn-add-saving').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-goal-id');
+      const g = cachedGoals.find(item => item.id === id);
+      if (g) openGoalSavingModal(g);
+    });
+  });
+}
+
+function openGoalModal(goalToEdit = null) {
+  if (!dom.formGoal) return;
+  dom.formGoal.reset();
+
+  const titleEl = document.getElementById('modal-goal-title');
+  const idInput = document.getElementById('goal-id');
+  const nameInput = document.getElementById('goal-name');
+  const targetInput = document.getElementById('goal-target');
+  const currentInput = document.getElementById('goal-current');
+  const deadlineInput = document.getElementById('goal-deadline');
+  const noteInput = document.getElementById('goal-note');
+
+  if (goalToEdit) {
+    if (titleEl) titleEl.textContent = 'Edit Target Keuangan';
+    idInput.value = goalToEdit.id;
+    nameInput.value = goalToEdit.name || '';
+    targetInput.value = goalToEdit.targetAmount || 0;
+    currentInput.value = goalToEdit.currentAmount || 0;
+    deadlineInput.value = goalToEdit.deadline || '';
+    noteInput.value = goalToEdit.note || '';
+  } else {
+    if (titleEl) titleEl.textContent = 'Buat Target Baru';
+    idInput.value = '';
+  }
+
+  openModal(dom.modalGoal);
+}
+
+if (dom.formGoal) {
+  dom.formGoal.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btnSubmit = dom.formGoal.querySelector('button[type="submit"]');
+    const id = document.getElementById('goal-id').value;
+    const name = document.getElementById('goal-name').value;
+    const target = Currency.parse(document.getElementById('goal-target').value);
+    const current = Currency.parse(document.getElementById('goal-current').value);
+    const deadline = document.getElementById('goal-deadline').value;
+    const note = document.getElementById('goal-note').value;
+
+    const val = Validator.validateGoal({ name, targetAmount: target, deadline });
+    if (!val.isValid) {
+      showToast(val.firstError, 'error');
+      return;
+    }
+
+    btnSubmit.disabled = true;
+    try {
+      if (id) {
+        await GoalService.updateGoal(currentUser.uid, id, {
+          name,
+          targetAmount: target,
+          currentAmount: current,
+          deadline,
+          note
+        });
+        showToast('Target berhasil diperbarui.', 'success');
+      } else {
+        await GoalService.createGoal(currentUser.uid, {
+          name,
+          targetAmount: target,
+          currentAmount: current,
+          deadline,
+          note
+        });
+        showToast('Target berhasil dibuat.', 'success');
+      }
+      closeModal(dom.modalGoal);
+      await loadGoalsView();
+    } catch (err) {
+      showToast(formatFriendlyError(err), 'error');
+    } finally {
+      btnSubmit.disabled = false;
+    }
+  });
+}
+
+function openGoalSavingModal(goal) {
+  if (!dom.formGoalSaving) return;
+  dom.formGoalSaving.reset();
+
+  document.getElementById('saving-goal-id').value = goal.id;
+  document.getElementById('saving-goal-name').textContent = goal.name;
+  openModal(dom.modalAddGoalSaving);
+}
+
+if (dom.formGoalSaving) {
+  dom.formGoalSaving.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btnSubmit = dom.formGoalSaving.querySelector('button[type="submit"]');
+    const id = document.getElementById('saving-goal-id').value;
+    const addAmt = Currency.parse(document.getElementById('saving-amount').value);
+
+    if (addAmt <= 0) {
+      showToast('Nominal tabungan harus lebih dari Rp0.', 'error');
+      return;
+    }
+
+    const g = cachedGoals.find(item => item.id === id);
+    if (!g) return;
+
+    btnSubmit.disabled = true;
+    try {
+      const newTotal = Number(g.currentAmount || 0) + addAmt;
+      await GoalService.updateGoal(currentUser.uid, id, { currentAmount: newTotal });
+      closeModal(dom.modalAddGoalSaving);
+      showToast(`Berhasil menambah ${Currency.format(addAmt)} ke target!`, 'success');
+      await loadGoalsView();
+    } catch (err) {
+      showToast(formatFriendlyError(err), 'error');
+    } finally {
+      btnSubmit.disabled = false;
+    }
+  });
+}
+
+/* ==========================================================================
+   VIEW 4: REPORTS (Laporan & Copy-ready Text Export)
+   ========================================================================== */
+
+let reportPeriod = 'month'; // 'month', 'lastmonth', '7days', 'today'
+
+async function loadReportsView() {
+  let startDate = null;
+  let endDate = null;
+  let periodLabel = 'Bulan Ini';
+
+  if (reportPeriod === 'month') {
+    const r = DateUtil.getCurrentMonthRange();
+    startDate = r.start.toISOString().split('T')[0];
+    endDate = r.end.toISOString().split('T')[0];
+    periodLabel = 'Bulan Ini (' + DateUtil.formatDate(r.start, false) + ' - ' + DateUtil.formatDate(r.end) + ')';
+  } else if (reportPeriod === 'lastmonth') {
+    const r = DateUtil.getLastMonthRange();
+    startDate = r.start.toISOString().split('T')[0];
+    endDate = r.end.toISOString().split('T')[0];
+    periodLabel = 'Bulan Lalu (' + DateUtil.formatDate(r.start, false) + ' - ' + DateUtil.formatDate(r.end) + ')';
+  } else if (reportPeriod === '7days') {
+    const r = DateUtil.getLast7DaysRange();
+    startDate = r.start.toISOString().split('T')[0];
+    endDate = r.end.toISOString().split('T')[0];
+    periodLabel = '7 Hari Terakhir';
+  } else if (reportPeriod === 'today') {
+    startDate = DateUtil.todayString();
+    endDate = DateUtil.todayString();
+    periodLabel = 'Hari Ini (' + DateUtil.formatDate(new Date()) + ')';
+  }
+
+  const transactions = await TransactionService.getTransactions(currentUser.uid, { startDate, endDate });
+  const reportData = ReportService.generateReport(transactions, cachedPundis, cachedCategories, periodLabel);
+
+  // Bind summary stats
+  const repIncome = document.getElementById('rep-income');
+  const repExpense = document.getElementById('rep-expense');
+  const repNet = document.getElementById('rep-net');
+  const repPeriodTitle = document.getElementById('rep-period-title');
+
+  if (repIncome) repIncome.textContent = Currency.format(reportData.totalIncome);
+  if (repExpense) repExpense.textContent = Currency.format(reportData.totalExpense);
+  if (repNet) {
+    repNet.textContent = Currency.format(reportData.netCashFlow);
+    repNet.className = reportData.netCashFlow >= 0 ? 'text-income' : 'text-expense';
+  }
+  if (repPeriodTitle) repPeriodTitle.textContent = periodLabel;
+
+  // Breakdown Category
+  const catListContainer = document.getElementById('rep-cat-list');
+  if (catListContainer) {
+    if (reportData.categoryList.length === 0) {
+      catListContainer.innerHTML = '<p class="subtle small">Belum ada pengeluaran pada periode ini.</p>';
+    } else {
+      catListContainer.innerHTML = reportData.categoryList.map(c => {
+        const pct = reportData.totalExpense > 0 ? Math.round((c.total / reportData.totalExpense) * 100) : 0;
+        return `
+          <div class="breakdown-item">
+            <div class="breakdown-name">
+              <span class="legend-dot" style="--c: ${c.color || '#5FBF8F'};"></span>
+              <span>${escapeHtml(c.name)}</span>
+            </div>
+            <div class="num"><strong>${Currency.format(c.total)}</strong> <span class="subtle">(${pct}%)</span></div>
+            <div class="progress">
+              <span style="width: ${pct}%; background: ${c.color || 'var(--primary)'};"></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Breakdown Pundi
+  const pundiListContainer = document.getElementById('rep-pundi-list');
+  if (pundiListContainer) {
+    if (reportData.pundiList.length === 0) {
+      pundiListContainer.innerHTML = '<p class="subtle small">Belum ada pengeluaran pada periode ini.</p>';
+    } else {
+      pundiListContainer.innerHTML = reportData.pundiList.map(p => {
+        const pct = reportData.totalExpense > 0 ? Math.round((p.total / reportData.totalExpense) * 100) : 0;
+        return `
+          <div class="breakdown-item">
+            <div class="breakdown-name">
+              <i data-lucide="wallet" class="icon" style="width:14px;height:14px;color:${p.color || '#5FBF8F'};"></i>
+              <span>${escapeHtml(p.name)}</span>
+            </div>
+            <div class="num"><strong>${Currency.format(p.total)}</strong> <span class="subtle">(${pct}%)</span></div>
+            <div class="progress">
+              <span style="width: ${pct}%; background: ${p.color || 'var(--primary)'};"></span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  }
+
+  // Text report preview & copy button
+  const copyableText = ReportService.buildCopyableText(reportData);
+  const textPreview = document.getElementById('rep-text-preview');
+  if (textPreview) textPreview.textContent = copyableText;
+
+  const btnCopy = document.getElementById('btn-copy-report');
+  if (btnCopy) {
+    btnCopy.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(copyableText);
+        showToast('Laporan berhasil disalin ke clipboard!', 'success');
+      } catch (err) {
+        showToast('Gagal menyalin teks laporan.', 'error');
+      }
+    };
+  }
+}
+
+// Reports Period switcher
+document.querySelectorAll('[data-rep-period]').forEach(chip => {
+  chip.addEventListener('click', (e) => {
+    document.querySelectorAll('[data-rep-period]').forEach(c => c.setAttribute('aria-pressed', 'false'));
+    chip.setAttribute('aria-pressed', 'true');
+    reportPeriod = chip.getAttribute('data-rep-period');
+    loadReportsView();
+  });
+});
+
+/* ==========================================================================
+   VIEW 5: SETTINGS & PREFERENCES
+   ========================================================================== */
+
+function loadSettingsView() {
+  const settings = SettingsService.getSettings();
+  const widgets = settings.widgets || {};
+
+  // Setup widget switch toggles
+  const widgetToggles = [
+    { id: 'toggle-w-income', key: 'income' },
+    { id: 'toggle-w-expense', key: 'expense' },
+    { id: 'toggle-w-net', key: 'netCashFlow' },
+    { id: 'toggle-w-pundi', key: 'pundiList' },
+    { id: 'toggle-w-chart', key: 'expenseChart' },
+    { id: 'toggle-w-recent', key: 'recentTransactions' },
+    { id: 'toggle-w-warning', key: 'budgetWarning' }
+  ];
+
+  widgetToggles.forEach(({ id, key }) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.checked = Boolean(widgets[key]);
+      el.onchange = (e) => {
+        SettingsService.setWidgetVisible(key, e.target.checked);
+        showToast('Preferensi dashboard diperbarui.', 'info');
+      };
+    }
+  });
+
+  // User details
+  const profileName = document.getElementById('settings-profile-name');
+  const profileEmail = document.getElementById('settings-profile-email');
+  if (profileName) profileName.textContent = currentUser.displayName || 'Pengguna DompetQu';
+  if (profileEmail) profileEmail.textContent = currentUser.email || '-';
+
+  // Logout button
+  const btnLogout = document.getElementById('btn-logout');
+  if (btnLogout) {
+    btnLogout.onclick = () => {
+      showConfirm({
+        title: 'Keluar Akun?',
+        message: 'Apakah Anda yakin ingin keluar dari DompetQu?',
+        actionLabel: 'Keluar',
+        isDanger: true,
+        onConfirm: async () => {
+          await AuthService.logout();
+          window.location.replace('login.html');
+        }
+      });
+    };
+  }
+}
+
+/* ==========================================================================
+   PWA & APP INITIALIZATION
+   ========================================================================== */
+
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(reg => {
+          console.log('[DompetQu] Service Worker registered with scope:', reg.scope);
+        })
+        .catch(err => {
+          console.warn('[DompetQu] Service Worker registration failed:', err);
+        });
+    });
+  }
+}
+
+// Global modal close triggers (buttons with data-close-modal or clicking backdrop)
+document.querySelectorAll('[data-close-modal]').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const dialog = e.target.closest('dialog');
+    if (dialog) closeModal(dialog);
+  });
+});
+
+document.querySelectorAll('dialog.modal').forEach(dialog => {
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) {
+      closeModal(dialog);
+    }
+  });
+});
+
+// App Startup
+AuthService.requireAuth(async (user) => {
+  currentUser = user;
+
+  // Bind display names
+  dom.userDisplayNames.forEach(el => { el.textContent = user.displayName || 'Pengguna'; });
+  dom.userEmails.forEach(el => { el.textContent = user.email || ''; });
+
+  // Init network listeners
+  initNetworkStatus();
+
+  // Register PWA service worker
+  registerServiceWorker();
+
+  // Preload baseline data
+  await refreshBaselineData();
+
+  // Bind navigation links
+  dom.navLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = link.getAttribute('data-view');
+      navigateTo(target);
+    });
+  });
+
+  // FAB / Add Transaction buttons
+  document.querySelectorAll('.btn-open-tx-modal').forEach(btn => {
+    btn.addEventListener('click', () => openTxModal());
+  });
+
+  document.querySelectorAll('.btn-open-pundi-modal').forEach(btn => {
+    btn.addEventListener('click', () => openPundiModal());
+  });
+
+  document.querySelectorAll('.btn-open-goal-modal').forEach(btn => {
+    btn.addEventListener('click', () => openGoalModal());
+  });
+
+  // Handle URL hash on initial load
+  const initialHash = window.location.hash.replace('#', '') || 'dashboard';
+  navigateTo(dom.views[initialHash] ? initialHash : 'dashboard');
+
+  // Dismiss boot screen
+  if (dom.bootScreen) {
+    dom.bootScreen.hidden = true;
+  }
+  if (dom.appShell) {
+    dom.appShell.hidden = false;
+  }
+});

@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>DompetQu — Personal Finance PWA</title>
+  <meta name="description" content="Aplikasi manajemen keuangan pribadi berbasis PWA dengan sistem alokasi Pundi-Pundi.">
+  <meta name="theme-color" content="#111315">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg">
+  <link rel="apple-touch-icon" href="assets/icons/icon.svg">
+
+  <!-- Core Stylesheets -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <!-- Chart.js & Lucide Icons -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- Initial boot loader -->
+  <div id="boot-screen" class="boot">
+    <img src="assets/icons/icon.svg" alt="DompetQu" width="48" height="48" style="border-radius:12px;">
+    <div class="spinner"></div>
+    <span class="eyebrow">Memuat DompetQu...</span>
+  </div>
+
+  <div id="app-shell" class="app-shell" hidden>
+    <!-- Desktop Sidebar -->
+    <aside class="sidebar">
+      <a href="#dashboard" class="brand" data-view="dashboard">
+        <img src="assets/icons/icon.svg" alt="Logo">
+        <span>DompetQu</span>
+      </a>
+
+      <nav class="side-nav" style="margin-top: 24px;">
+        <a href="#dashboard" class="nav-link is-active" data-view="dashboard">
+          <i data-lucide="layout-dashboard" class="icon" style="width:18px;height:18px;"></i>
+          <span>Dashboard</span>
+        </a>
+        <a href="#pundi" class="nav-link" data-view="pundi">
+          <i data-lucide="wallet-cards" class="icon" style="width:18px;height:18px;"></i>
+          <span>Pundi-Pundi</span>
+        </a>
+        <a href="#transactions" class="nav-link" data-view="transactions">
+          <i data-lucide="arrow-left-right" class="icon" style="width:18px;height:18px;"></i>
+          <span>Transaksi</span>
+        </a>
+        <a href="#goals" class="nav-link" data-view="goals">
+          <i data-lucide="target" class="icon" style="width:18px;height:18px;"></i>
+          <span>Target Keuangan</span>
+        </a>
+        <a href="#reports" class="nav-link" data-view="reports">
+          <i data-lucide="chart-no-axes-combined" class="icon" style="width:18px;height:18px;"></i>
+          <span>Laporan</span>
+        </a>
+        <a href="#settings" class="nav-link" data-view="settings">
+          <i data-lucide="settings" class="icon" style="width:18px;height:18px;"></i>
+          <span>Pengaturan</span>
+        </a>
+      </nav>
+
+      <div style="margin-top: 20px; padding: 0 4px;">
+        <button type="button" class="btn btn-primary btn-block btn-open-tx-modal">
+          <i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i>
+          <span>Tambah Transaksi</span>
+        </button>
+      </div>
+
+      <div class="sidebar-user">
+        <div class="avatar avatar-sm avatar-round">
+          <i data-lucide="user" style="width:16px;height:16px;"></i>
+        </div>
+        <div class="sidebar-user-info">
+          <span class="sidebar-user-name user-display-name">Pengguna</span>
+          <span class="sidebar-user-email user-display-email">user@email.com</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main">
+      <!-- Mobile Topbar -->
+      <header class="topbar">
+        <div class="topbar-brand">
+          <img src="assets/icons/icon.svg" alt="DompetQu">
+          <h1 class="topbar-title" id="topbar-title">DompetQu</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="offline-badge" hidden>
+            <i data-lucide="wifi-off" class="icon" style="width:13px;height:13px;"></i>
+            <span>Offline</span>
+          </span>
+          <button type="button" class="icon-btn btn-open-tx-modal" aria-label="Tambah Transaksi">
+            <i data-lucide="plus" class="icon" style="width:20px;height:20px;"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- Offline banner if network drops -->
+      <div class="offline-banner" hidden>
+        <i data-lucide="wifi-off" class="icon" style="width:18px;height:18px;"></i>
+        <span>Koneksi internet tidak tersedia. Perubahan tersimpan di perangkat lokal.</span>
+      </div>
+
+      <!-- ========================================== -->
+      <!-- VIEW 1: DASHBOARD                          -->
+      <!-- ========================================== -->
+      <section id="view-dashboard" class="view">
+        <div class="dash-hero">
+          <p class="greeting">Selamat datang, <span class="user-display-name">Pengguna</span></p>
+          <span class="eyebrow">Total Saldo</span>
+          <div class="amount-hero" id="dash-total-balance">Rp0</div>
+
+          <dl class="stat-row">
+            <div class="stat stat-income" id="widget-income">
+              <dt><i data-lucide="trending-up" class="icon" style="width:15px;height:15px;"></i> Pemasukan</dt>
+              <dd id="dash-month-income">Rp0</dd>
+            </div>
+            <div class="stat stat-expense" id="widget-expense">
+              <dt><i data-lucide="trending-down" class="icon" style="width:15px;height:15px;"></i> Pengeluaran</dt>
+              <dd id="dash-month-expense">Rp0</dd>
+            </div>
+            <div class="stat stat-net" id="widget-net">
+              <dt><i data-lucide="wallet" class="icon" style="width:15px;height:15px;"></i> Saldo Bersih</dt>
+              <dd id="dash-net-cash">Rp0</dd>
+            </div>
+          </dl>
+          <p class="period-note">Akumulasi pengeluaran dan pemasukan bulan ini</p>
+        </div>
+
+        <!-- Budget Warnings Alert Area -->
+        <div class="section" id="dash-warning-section" hidden>
+          <div class="alert-list" id="dash-budget-warnings"></div>
+        </div>
+
+        <div class="dash-grid">
+          <!-- Pundi Envelopes Overview -->
+          <div class="section">
+            <div class="section-head">
+              <h2 class="section-title">Pundi-Pundi</h2>
+              <a href="#pundi" class="link" data-view="pundi">Kelola Semua</a>
+            </div>
+            <div class="alert-list" id="dash-pundi-list"></div>
+          </div>
+
+          <!-- Monthly Expense Doughnut Chart -->
+          <div class="section">
+            <div class="section-head">
+              <h2 class="section-title">Pengeluaran Bulan Ini</h2>
+            </div>
+            <div class="card chart-box">
+              <div class="chart-wrap">
+                <canvas id="dash-expense-chart"></canvas>
+              </div>
+              <ul class="legend" id="dash-expense-legend"></ul>
+            </div>
+          </div>
+
+          <!-- Recent Transactions (5 Latest) -->
+          <div class="section section-span-2">
+            <div class="section-head">
+              <h2 class="section-title">Transaksi Terbaru</h2>
+              <a href="#transactions" class="link" data-view="transactions">Lihat Semua</a>
+            </div>
+            <div id="dash-recent-tx"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 2: PUNDI-PUNDI                        -->
+      <!-- ========================================== -->
+      <section id="view-pundi" class="view" hidden>
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">Envelope Budgeting</span>
+            <h2 class="amount-lg">Pundi-Pundi</h2>
+          </div>
+          <div class="page-head-actions">
+            <button type="button" class="btn btn-primary btn-open-pundi-modal">
+              <i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i>
+              <span>Buat Pundi</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Pundi Cards Grid -->
+        <div class="pundi-grid" id="pundi-list-cards"></div>
+
+        <!-- Archived Pundis Collapsible Section -->
+        <div class="section" id="archived-pundi-section" hidden>
+          <div class="section-head">
+            <h3 class="section-title subtle">Pundi Diarsipkan</h3>
+          </div>
+          <div class="alert-list" id="pundi-archived-list"></div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 3: TRANSAKSI                          -->
+      <!-- ========================================== -->
+      <section id="view-transactions" class="view" hidden>
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">Histori & Pencatatan</span>
+            <h2 class="amount-lg">Transaksi</h2>
+          </div>
+          <div class="page-head-actions">
+            <button type="button" class="btn btn-primary btn-open-tx-modal">
+              <i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i>
+              <span>Tambah</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Search & Filter Toolbar -->
+        <div class="toolbar">
+          <div class="search">
+            <i data-lucide="search" class="icon" style="width:16px;height:16px;"></i>
+            <input type="search" class="input" id="tx-search-input" placeholder="Cari transaksi, pundi, atau nominal...">
+          </div>
+        </div>
+
+        <!-- Filter Chips: Period -->
+        <div class="chips" role="tablist" aria-label="Filter Periode">
+          <button type="button" class="chip" data-tx-period="month" aria-pressed="true">Bulan Ini</button>
+          <button type="button" class="chip" data-tx-period="7days" aria-pressed="false">7 Hari</button>
+          <button type="button" class="chip" data-tx-period="today" aria-pressed="false">Hari Ini</button>
+          <button type="button" class="chip" data-tx-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
+          <button type="button" class="chip" data-tx-period="custom" aria-pressed="false">Kustom</button>
+        </div>
+
+        <!-- Filter Segment: Type -->
+        <div class="segmented" style="margin-top: 10px;">
+          <button type="button" data-tx-type="" aria-pressed="true">Semua</button>
+          <button type="button" data-tx-type="EXPENSE" aria-pressed="false">Pengeluaran</button>
+          <button type="button" data-tx-type="INCOME" aria-pressed="false">Pemasukan</button>
+          <button type="button" data-tx-type="TRANSFER" aria-pressed="false">Transfer</button>
+        </div>
+
+        <!-- Custom Range Datepicker Fields -->
+        <div class="custom-range" id="tx-custom-date-fields" hidden>
+          <div class="field">
+            <label for="tx-start-date" class="xsmall subtle">Dari Tanggal</label>
+            <input type="date" class="input" id="tx-start-date">
+          </div>
+          <div class="field">
+            <label for="tx-end-date" class="xsmall subtle">Sampai Tanggal</label>
+            <input type="date" class="input" id="tx-end-date">
+          </div>
+        </div>
+
+        <!-- List Summary Info -->
+        <div class="list-summary">
+          <span id="tx-count">0 transaksi</span>
+          <span id="tx-total-filtered" class="subtle"></span>
+        </div>
+
+        <!-- Grouped Transaction List Container -->
+        <div id="tx-list-container"></div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 4: TARGET KEUANGAN (GOALS)            -->
+      <!-- ========================================== -->
+      <section id="view-goals" class="view" hidden>
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">Rencana Masa Depan</span>
+            <h2 class="amount-lg">Target Keuangan</h2>
+          </div>
+          <div class="page-head-actions">
+            <button type="button" class="btn btn-primary btn-open-goal-modal">
+              <i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i>
+              <span>Buat Target</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="goal-grid" id="goals-grid"></div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 5: LAPORAN                            -->
+      <!-- ========================================== -->
+      <section id="view-reports" class="view" hidden>
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">Ringkasan Finansial</span>
+            <h2 class="amount-lg">Laporan</h2>
+          </div>
+          <div class="page-head-actions">
+            <button type="button" class="btn btn-secondary" id="btn-copy-report">
+              <i data-lucide="copy" class="icon" style="width:16px;height:16px;"></i>
+              <span>Salin Laporan</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="chips" role="tablist">
+          <button type="button" class="chip" data-rep-period="month" aria-pressed="true">Bulan Ini</button>
+          <button type="button" class="chip" data-rep-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
+          <button type="button" class="chip" data-rep-period="7days" aria-pressed="false">7 Hari</button>
+          <button type="button" class="chip" data-rep-period="today" aria-pressed="false">Hari Ini</button>
+        </div>
+
+        <div class="period-note" style="margin-top: 10px;" id="rep-period-title">Bulan Ini</div>
+
+        <dl class="summary-grid">
+          <div class="summary-item">
+            <dt><i data-lucide="trending-up" class="icon text-income" style="width:15px;height:15px;"></i> Pemasukan</dt>
+            <dd id="rep-income" class="text-income">Rp0</dd>
+          </div>
+          <div class="summary-item">
+            <dt><i data-lucide="trending-down" class="icon text-expense" style="width:15px;height:15px;"></i> Pengeluaran</dt>
+            <dd id="rep-expense">Rp0</dd>
+          </div>
+          <div class="summary-item summary-item-wide">
+            <dt><i data-lucide="wallet" class="icon" style="width:15px;height:15px;"></i> Saldo Bersih</dt>
+            <dd id="rep-net">Rp0</dd>
+          </div>
+        </dl>
+
+        <div class="dash-grid" style="margin-top: 24px;">
+          <div class="section">
+            <h3 class="section-title" style="margin-bottom: 12px;">Pengeluaran per Kategori</h3>
+            <div class="card" id="rep-cat-list"></div>
+          </div>
+          <div class="section">
+            <h3 class="section-title" style="margin-bottom: 12px;">Pengeluaran per Pundi</h3>
+            <div class="card" id="rep-pundi-list"></div>
+          </div>
+        </div>
+
+        <div class="section">
+          <details class="text-report">
+            <summary>
+              <i data-lucide="chevron-right" class="icon" style="width:16px;height:16px;"></i>
+              <span>Lihat Format Teks Laporan</span>
+            </summary>
+            <pre class="report-text" id="rep-text-preview"></pre>
+          </details>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- VIEW 6: PENGATURAN                         -->
+      <!-- ========================================== -->
+      <section id="view-settings" class="view" hidden>
+        <div class="page-head">
+          <div>
+            <span class="eyebrow">Preferensi Aplikasi</span>
+            <h2 class="amount-lg">Pengaturan</h2>
+          </div>
+        </div>
+
+        <!-- User Profile Card -->
+        <div class="card profile-head" style="margin-bottom: 24px;">
+          <div class="avatar avatar-round">
+            <i data-lucide="user" style="width:22px;height:22px;"></i>
+          </div>
+          <div style="flex:1;min-width:0;">
+            <h3 style="font-size:var(--fs-md);" id="settings-profile-name">Pengguna DompetQu</h3>
+            <p class="subtle small" id="settings-profile-email">user@email.com</p>
+          </div>
+        </div>
+
+        <!-- Dashboard Widgets Customization -->
+        <h3 class="section-title" style="margin-bottom: 10px;">Widget Dashboard</h3>
+        <div class="card settings-group" style="margin-bottom: 24px;">
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Pemasukan Bulan Ini</span>
+              <span class="setting-desc">Tampilkan total nominal pemasukan</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-w-income" checked>
+              <span class="switch-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Pengeluaran Bulan Ini</span>
+              <span class="setting-desc">Tampilkan total nominal pengeluaran</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-w-expense" checked>
+              <span class="switch-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Saldo Bersih</span>
+              <span class="setting-desc">Tampilkan selisih pemasukan dan pengeluaran</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-w-net" checked>
+              <span class="switch-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Grafik Donat Pengeluaran</span>
+              <span class="setting-desc">Tampilkan visualisasi persentase kategori</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-w-chart" checked>
+              <span class="switch-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Pundi-Pundi</span>
+              <span class="setting-desc">Tampilkan daftar status pundi di dashboard</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-w-pundi" checked>
+              <span class="switch-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Peringatan Budget (75%, 90%, 100%)</span>
+              <span class="setting-desc">Tampilkan notifikasi batas penggunaan anggaran</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-w-warning" checked>
+              <span class="switch-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Transaksi Terbaru</span>
+              <span class="setting-desc">Tampilkan 5 riwayat transaksi terakhir</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="toggle-w-recent" checked>
+              <span class="switch-track"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- General App Settings -->
+        <h3 class="section-title" style="margin-bottom: 10px;">Aplikasi</h3>
+        <div class="card settings-group" style="margin-bottom: 24px;">
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Mata Uang</span>
+              <span class="setting-desc">IDR (Rupiah Indonesia)</span>
+            </div>
+            <span class="badge">id-ID</span>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Tema Tampilan</span>
+              <span class="setting-desc">Calm Dark Finance</span>
+            </div>
+            <span class="badge">Aktif</span>
+          </div>
+          <div class="setting-row">
+            <div class="setting-text">
+              <span class="setting-title">Versi PWA</span>
+              <span class="setting-desc">DompetQu v1.0.0</span>
+            </div>
+            <span class="badge">Standalone</span>
+          </div>
+        </div>
+
+        <!-- Logout Action -->
+        <button type="button" class="btn btn-ghost-danger btn-block" id="btn-logout">
+          <i data-lucide="log-out" class="icon" style="width:16px;height:16px;"></i>
+          <span>Keluar dari Akun</span>
+        </button>
+      </section>
+    </main>
+
+    <!-- Mobile Bottom Navigation -->
+    <nav class="bottom-nav">
+      <a href="#dashboard" class="bnav-link is-active" data-view="dashboard">
+        <i data-lucide="layout-dashboard" class="icon" style="width:20px;height:20px;"></i>
+        <span>Dashboard</span>
+      </a>
+      <a href="#pundi" class="bnav-link" data-view="pundi">
+        <i data-lucide="wallet-cards" class="icon" style="width:20px;height:20px;"></i>
+        <span>Pundi</span>
+      </a>
+      <button type="button" class="bnav-fab btn-open-tx-modal" aria-label="Tambah Transaksi Baru">
+        <i data-lucide="plus" style="width:24px;height:24px;"></i>
+      </button>
+      <a href="#transactions" class="bnav-link" data-view="transactions">
+        <i data-lucide="arrow-left-right" class="icon" style="width:20px;height:20px;"></i>
+        <span>Transaksi</span>
+      </a>
+      <a href="#reports" class="bnav-link" data-view="reports">
+        <i data-lucide="chart-no-axes-combined" class="icon" style="width:20px;height:20px;"></i>
+        <span>Laporan</span>
+      </a>
+    </nav>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: QUICK TRANSACTION (Income, Expense, Transfer)           -->
+  <!-- ============================================================== -->
+  <dialog id="modal-tx" class="modal">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-tx-title">Tambah Transaksi</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="form-tx" class="form">
+          <input type="hidden" id="tx-id">
+
+          <!-- Type Segmented Control -->
+          <fieldset class="field">
+            <legend class="label">Jenis Transaksi</legend>
+            <div class="segmented">
+              <label>
+                <input type="radio" name="tx_type" value="EXPENSE" checked>
+                <span>Pengeluaran</span>
+              </label>
+              <label>
+                <input type="radio" name="tx_type" value="INCOME">
+                <span>Pemasukan</span>
+              </label>
+              <label>
+                <input type="radio" name="tx_type" value="TRANSFER">
+                <span>Transfer</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <!-- Amount Input with Currency prefix -->
+          <div class="field">
+            <label for="tx-amount">Nominal</label>
+            <div class="input-prefix">
+              <span>Rp</span>
+              <input type="text" inputmode="numeric" id="tx-amount" class="input input-amount" placeholder="0" required>
+            </div>
+          </div>
+
+          <!-- Pundi Selection -->
+          <div class="field">
+            <label for="tx-pundi" id="tx-pundi-label">Pundi Sumber</label>
+            <select id="tx-pundi" class="input" data-pundi-select required></select>
+          </div>
+
+          <!-- Destination Pundi (for TRANSFER only) -->
+          <div class="field" id="tx-field-destination" hidden>
+            <label for="tx-dest-pundi">Pundi Tujuan</label>
+            <select id="tx-dest-pundi" class="input" data-pundi-select></select>
+          </div>
+
+          <!-- Category Selection (for EXPENSE and INCOME) -->
+          <div class="field" id="tx-field-category">
+            <label for="tx-category">Kategori</label>
+            <select id="tx-category" class="input" data-category-select></select>
+          </div>
+
+          <!-- Date & Note Row -->
+          <div class="field-grid">
+            <div class="field">
+              <label for="tx-date">Tanggal</label>
+              <input type="date" id="tx-date" class="input" required>
+            </div>
+            <div class="field">
+              <label for="tx-note">Catatan <span class="optional">(opsional)</span></label>
+              <input type="text" id="tx-note" class="input" placeholder="Makan siang, tagihan, dll">
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions" style="margin-top: 14px;">
+            <button type="button" class="btn btn-ghost-danger" id="btn-delete-tx" hidden>Hapus</button>
+            <button type="submit" class="btn btn-primary">Simpan Transaksi</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: PUNDI MANAGEMENT (Create / Edit)                        -->
+  <!-- ============================================================== -->
+  <dialog id="modal-pundi" class="modal">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-pundi-title">Buat Pundi Baru</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="form-pundi" class="form">
+          <input type="hidden" id="pundi-id">
+
+          <div class="field">
+            <label for="pundi-name">Nama Pundi</label>
+            <input type="text" id="pundi-name" class="input" placeholder="Contoh: Makan, Transport, Tagihan" required>
+          </div>
+
+          <div class="field">
+            <label for="pundi-desc">Deskripsi <span class="optional">(opsional)</span></label>
+            <input type="text" id="pundi-desc" class="input" placeholder="Pos pengeluaran harian">
+          </div>
+
+          <div class="field">
+            <label for="pundi-budget">Anggaran Bulanan (Budget)</label>
+            <div class="input-prefix">
+              <span>Rp</span>
+              <input type="text" inputmode="numeric" id="pundi-budget" class="input" placeholder="0" required>
+            </div>
+            <span class="hint">Alokasi maksimal pengeluaran per bulan untuk pos ini.</span>
+          </div>
+
+          <div class="field" id="pundi-balance-field">
+            <label for="pundi-balance">Saldo Awal</label>
+            <div class="input-prefix">
+              <span>Rp</span>
+              <input type="text" inputmode="numeric" id="pundi-balance" class="input" placeholder="0">
+            </div>
+            <span class="hint">Jumlah uang yang sudah ada di dalam Pundi ini.</span>
+          </div>
+
+          <!-- Color Swatches -->
+          <div class="field">
+            <label>Warna Label</label>
+            <div class="swatches">
+              <label class="swatch"><input type="radio" name="pundi_color" value="#5FBF8F" checked><span style="--c:#5FBF8F;"></span></label>
+              <label class="swatch"><input type="radio" name="pundi_color" value="#6E9FD6"><span style="--c:#6E9FD6;"></span></label>
+              <label class="swatch"><input type="radio" name="pundi_color" value="#D6A85F"><span style="--c:#D6A85F;"></span></label>
+              <label class="swatch"><input type="radio" name="pundi_color" value="#B57EDC"><span style="--c:#B57EDC;"></span></label>
+              <label class="swatch"><input type="radio" name="pundi_color" value="#E58A9D"><span style="--c:#E58A9D;"></span></label>
+              <label class="swatch"><input type="radio" name="pundi_color" value="#5FB8BF"><span style="--c:#5FB8BF;"></span></label>
+              <label class="swatch"><input type="radio" name="pundi_color" value="#A0A6AD"><span style="--c:#A0A6AD;"></span></label>
+            </div>
+          </div>
+
+          <div class="form-actions" style="margin-top: 14px;">
+            <button type="button" class="btn btn-secondary" data-close-modal>Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan Pundi</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: GOAL MANAGEMENT (Create / Edit)                         -->
+  <!-- ============================================================== -->
+  <dialog id="modal-goal" class="modal">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 class="modal-title" id="modal-goal-title">Buat Target Keuangan</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="form-goal" class="form">
+          <input type="hidden" id="goal-id">
+
+          <div class="field">
+            <label for="goal-name">Nama Target</label>
+            <input type="text" id="goal-name" class="input" placeholder="Contoh: DP Rumah, Motor, Liburan" required>
+          </div>
+
+          <div class="field-grid">
+            <div class="field">
+              <label for="goal-target">Target Nominal</label>
+              <div class="input-prefix">
+                <span>Rp</span>
+                <input type="text" inputmode="numeric" id="goal-target" class="input" placeholder="0" required>
+              </div>
+            </div>
+            <div class="field">
+              <label for="goal-current">Sudah Terkumpul</label>
+              <div class="input-prefix">
+                <span>Rp</span>
+                <input type="text" inputmode="numeric" id="goal-current" class="input" placeholder="0">
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="goal-deadline">Tenggat Waktu <span class="optional">(opsional)</span></label>
+            <input type="date" id="goal-deadline" class="input">
+          </div>
+
+          <div class="field">
+            <label for="goal-note">Catatan <span class="optional">(opsional)</span></label>
+            <input type="text" id="goal-note" class="input" placeholder="Rencana menabung per bulan">
+          </div>
+
+          <div class="form-actions" style="margin-top: 14px;">
+            <button type="button" class="btn btn-secondary" data-close-modal>Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan Target</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: ADD SAVING TO GOAL                                      -->
+  <!-- ============================================================== -->
+  <dialog id="modal-goal-saving" class="modal">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Tambah Tabungan</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="form-goal-saving" class="form">
+          <input type="hidden" id="saving-goal-id">
+          <p class="modal-text">Menambah progres ke target: <strong id="saving-goal-name">Target</strong></p>
+
+          <div class="field">
+            <label for="saving-amount">Nominal Ditambahkan</label>
+            <div class="input-prefix">
+              <span>Rp</span>
+              <input type="text" inputmode="numeric" id="saving-amount" class="input input-amount" placeholder="0" required>
+            </div>
+          </div>
+
+          <div class="form-actions" style="margin-top: 14px;">
+            <button type="button" class="btn btn-secondary" data-close-modal>Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan Progres</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: CONFIRMATION DIALOG                                     -->
+  <!-- ============================================================== -->
+  <dialog id="modal-confirm" class="modal">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 class="modal-title" id="confirm-title">Konfirmasi</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p style="font-weight: 500;" id="confirm-message">Apakah Anda yakin?</p>
+        <p class="subtle small" style="margin-top: 6px;" id="confirm-sub"></p>
+
+        <div class="form-actions" style="margin-top: 20px;">
+          <button type="button" class="btn btn-secondary" data-close-modal>Batal</button>
+          <button type="button" class="btn btn-danger" id="btn-confirm-action">Hapus</button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Toast Notification Root Container -->
+  <div class="toast-root" role="region" aria-label="Pemberitahuan"></div>
+
+  <!-- Main ES Module Script -->
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
