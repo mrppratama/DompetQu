@@ -46,7 +46,7 @@ service cloud.firestore {
 
     // Deny all other access by default
     match /{document=**} {
-      allow read, write: false;
+      allow read, write: if false;
     }
   }
 }
