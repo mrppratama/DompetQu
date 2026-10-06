@@ -109,69 +109,26 @@
       <!-- ========================================== -->
       <section id="view-dashboard" class="view">
         <div class="dash-hero">
-          <div class="dash-hero-card">
-            <div class="dash-hero-top">
-              <div class="dash-hero-badge">
-                <span class="live-dot"></span>
-                <span>Total Saldo Dompet</span>
-              </div>
-              <p class="greeting" style="margin: 0; font-size: 13px;">Hai, <strong class="user-display-name">Pengguna</strong></p>
-            </div>
+          <span class="eyebrow">Total Saldo Dompet</span>
+          <p class="greeting" style="margin: 2px 0 6px;">Hai, <strong class="user-display-name">Pengguna</strong></p>
+          <div class="amount-hero" id="dash-total-balance">Rp0</div>
 
-            <div class="amount-hero" id="dash-total-balance">Rp0</div>
-
-            <!-- 3 Stat Metric Cards -->
-            <div class="stat-grid">
-              <div class="stat-card stat-income" id="widget-income">
-                <div class="stat-card-head">
-                  <div class="stat-pill-icon"><i data-lucide="trending-up" class="icon" style="width:13px;height:13px;"></i></div>
-                  <span>Pemasukan</span>
-                </div>
-                <div class="stat-card-num text-income" id="dash-month-income">Rp0</div>
-              </div>
-              <div class="stat-card stat-expense" id="widget-expense">
-                <div class="stat-card-head">
-                  <div class="stat-pill-icon"><i data-lucide="trending-down" class="icon" style="width:13px;height:13px;"></i></div>
-                  <span>Pengeluaran</span>
-                </div>
-                <div class="stat-card-num text-expense" id="dash-month-expense">Rp0</div>
-              </div>
-              <div class="stat-card stat-net" id="widget-net">
-                <div class="stat-card-head">
-                  <div class="stat-pill-icon"><i data-lucide="wallet" class="icon" style="width:13px;height:13px;"></i></div>
-                  <span>Saldo Bersih</span>
-                </div>
-                <div class="stat-card-num" id="dash-net-cash">Rp0</div>
-              </div>
+          <!-- Cards rapih dan elegan persis seperti di Halaman Laporan (Gambar 2) -->
+          <dl class="summary-grid" style="margin-top: 18px;">
+            <div class="summary-item" id="widget-income">
+              <dt><i data-lucide="trending-up" class="icon text-income" style="width:15px;height:15px;"></i> Pemasukan</dt>
+              <dd id="dash-month-income" class="text-income">Rp0</dd>
             </div>
-          </div>
-        </div>
-
-        <!-- Quick Action Shortcuts -->
-        <div class="dash-quick-actions">
-          <button type="button" class="dash-action-btn btn-quick-income" title="Catat Pemasukan">
-            <div class="dash-action-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--primary);">
-              <i data-lucide="arrow-down-left" style="width:18px;height:18px;"></i>
+            <div class="summary-item" id="widget-expense">
+              <dt><i data-lucide="trending-down" class="icon text-expense" style="width:15px;height:15px;"></i> Pengeluaran</dt>
+              <dd id="dash-month-expense">Rp0</dd>
             </div>
-            <span>Pemasukan</span>
-          </button>
-          <button type="button" class="dash-action-btn btn-quick-expense" title="Catat Pengeluaran">
-            <div class="dash-action-icon" style="background: rgba(239, 68, 68, 0.15); color: var(--danger);">
-              <i data-lucide="arrow-up-right" style="width:18px;height:18px;"></i>
+            <div class="summary-item summary-item-wide" id="widget-net">
+              <dt><i data-lucide="wallet" class="icon" style="width:15px;height:15px;"></i> Saldo Bersih</dt>
+              <dd id="dash-net-cash" class="text-income">Rp0</dd>
             </div>
-            <span>Pengeluaran</span>
-          </button>
-          <button type="button" class="dash-action-btn btn-quick-transfer" title="Transfer Antar Pundi">
-            <div class="dash-action-icon" style="background: rgba(110, 159, 214, 0.15); color: #6E9FD6;">
-              <i data-lucide="repeat" style="width:18px;height:18px;"></i>
-            </div>
-            <span>Transfer</span>
-          </button>
-        </div>
-
-        <!-- Budget Warnings Alert Area -->
-        <div class="section" id="dash-warning-section" hidden>
-          <div class="alert-list" id="dash-budget-warnings"></div>
+          </dl>
+          <p class="period-note">Akumulasi pengeluaran dan pemasukan bulan ini</p>
         </div>
 
         <div class="dash-grid">
@@ -524,9 +481,9 @@
           <div class="setting-row">
             <div class="setting-text">
               <span class="setting-title">Versi PWA</span>
-              <span class="setting-desc">DompetQu v1.3.0</span>
+              <span class="setting-desc">DompetQu v1.3.1</span>
             </div>
-            <span class="badge">v1.3.0 Standalone</span>
+            <span class="badge">v1.3.1 Standalone</span>
           </div>
         </div>
 
@@ -968,9 +925,9 @@
             </div>
             <div class="profile-menu-item-text">
               <span class="title">Versi Aplikasi</span>
-              <span class="desc">DompetQu v1.3.0 &bull; Klik untuk riwayat pembaruan</span>
+              <span class="desc">DompetQu v1.3.1 &bull; Klik untuk riwayat pembaruan</span>
             </div>
-            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.3.0</span>
+            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.3.1</span>
           </button>
         </div>
 
@@ -999,12 +956,27 @@
       </div>
 
       <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding-right: 4px;">
+        <!-- Version 1.3.1 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.3.1</span>
+              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
+            </div>
+            <span class="changelog-date">7 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Alert di Dalam Card Pundi:</strong> Peringatan budget (75%, 90%, 100%) disematkan langsung di dalam kartu pundi (di Dashboard dan Kelola Pundi) dengan teks ringkas.</li>
+            <li><strong>Dashboard Bersih & Rapi:</strong> Kartu metrik Pemasukan, Pengeluaran, dan Saldo Bersih diselaraskan dengan tata letak rapi elegan seperti di halaman Laporan.</li>
+            <li><strong>Navigasi Kelola Pundi Cepat:</strong> Klik tombol Kelola Pundi atau tautan langsung berpindah ke halaman manajemen pundi tanpa kendala.</li>
+          </ul>
+        </div>
+
         <!-- Version 1.3.0 -->
         <div class="changelog-card">
           <div class="changelog-head">
             <div class="changelog-version">
               <span>v1.3.0</span>
-              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
             </div>
             <span class="changelog-date">7 Oktober 2026</span>
           </div>

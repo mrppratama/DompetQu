@@ -75,23 +75,12 @@ export const DashboardManager = {
     if (elements.widgetExpense) elements.widgetExpense.hidden = !activeWidgets.expense;
     if (elements.widgetNet) elements.widgetNet.hidden = !activeWidgets.netCashFlow;
 
-    // --- Render Budget Warnings ---
-    if (elements.warningsContainer && activeWidgets.budgetWarning) {
-      const warnings = evaluateBudgetWarnings(pundis, expenseByPundiMap);
-      if (warnings.length === 0) {
-        elements.warningsContainer.innerHTML = '';
+    // --- Hide standalone warnings container (moved inside cards per user request) ---
+    if (elements.warningsContainer) {
+      elements.warningsContainer.innerHTML = '';
+      if (elements.warningsContainer.closest('.section')) {
         elements.warningsContainer.closest('.section').hidden = true;
-      } else {
-        elements.warningsContainer.closest('.section').hidden = false;
-        elements.warningsContainer.innerHTML = warnings.map(w => `
-          <div class="alert alert-${w.level}">
-            <i data-lucide="alert-triangle" class="icon" style="width:18px;height:18px;"></i>
-            <div>${escapeHtml(w.message)}</div>
-          </div>
-        `).join('');
       }
-    } else if (elements.warningsContainer) {
-      elements.warningsContainer.closest('.section').hidden = true;
     }
 
     // --- Render Pundi-Pundi Mini Cards ---
@@ -113,8 +102,32 @@ export const DashboardManager = {
           const usage = BudgetUtil.calculateUsage(expense, budget);
           const status = BudgetUtil.getStatus(usage);
 
+          let alertHtml = '';
+          if (usage >= 100) {
+            alertHtml = `
+              <div class="pundi-alert-badge alert-danger">
+                <i data-lucide="alert-triangle" style="width:12px;height:12px;flex-shrink:0;"></i>
+                <span>Over budget (${usage}%)</span>
+              </div>
+            `;
+          } else if (usage >= 90) {
+            alertHtml = `
+              <div class="pundi-alert-badge alert-danger">
+                <i data-lucide="alert-triangle" style="width:12px;height:12px;flex-shrink:0;"></i>
+                <span>Budget hampir habis (${usage}%)</span>
+              </div>
+            `;
+          } else if (usage >= 75) {
+            alertHtml = `
+              <div class="pundi-alert-badge alert-warning">
+                <i data-lucide="alert-triangle" style="width:12px;height:12px;flex-shrink:0;"></i>
+                <span>Budget terpakai ${usage}%</span>
+              </div>
+            `;
+          }
+
           return `
-            <div class="card pundi-row" data-pundi-id="${p.id}">
+            <div class="card pundi-row" data-pundi-id="${p.id}" data-view="pundi" style="cursor: pointer;">
               <div class="avatar avatar-sm" style="background:${p.color || '#10B981'}20; color:${p.color || '#10B981'};">
                 <i data-lucide="${escapeHtml(p.icon || 'wallet')}" style="width:18px;height:18px;"></i>
               </div>
@@ -126,6 +139,7 @@ export const DashboardManager = {
               <div class="progress ${status.class}" style="grid-column: 1 / -1; margin-top: 6px;">
                 <span style="width: ${Math.min(100, usage)}%;"></span>
               </div>
+              ${alertHtml}
             </div>
           `;
         }).join('');

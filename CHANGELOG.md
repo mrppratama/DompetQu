@@ -4,6 +4,18 @@ Semua perubahan dan pembaruan penting pada aplikasi DompetQu (Personal Finance P
 
 Format pencatatan merujuk pada standar [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
+## [1.3.1] - 2026-10-07
+
+### Perbaikan Tampilan & Integrasi Alert Pundi
+- **Alert Terintegrasi Langsung ke Dalam Card Pundi:**
+  - Peringatan budget (75%, 90%, 100%) tidak lagi muncul sebagai banner terpisah yang mengganggu tata letak, melainkan disematkan langsung sebagai badge peringatan ringkas di dalam kartu pundi (baik di Dashboard maupun di halaman Kelola Pundi).
+  - Teks peringatan dipersingkat dan rapi (misal: `⚠️ Budget terpakai 77%`, `⚠️ Over budget (105%)`).
+- **Dashboard Rapi & Elegan Sesuai Halaman Laporan:**
+  - Kartu metrik Pemasukan, Pengeluaran, dan Saldo Bersih diselaraskan dengan tata letak grid elegan seperti di halaman Laporan.
+  - Menghilangkan tombol aksi blok terpisah yang membuat tampilan sesak.
+- **Perbaikan Navigasi Kelola Pundi:**
+  - Delegasi event navigasi global dan penanganan hash URL memastikan klik ke "Kelola Semua" atau "Kelola Pundi" selalu berpindah halaman dengan lancar.
+
 ---
 
 ## [1.3.0] - 2026-10-07

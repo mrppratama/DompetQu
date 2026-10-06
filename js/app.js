@@ -479,6 +479,30 @@ async function loadPundiView() {
       const status = BudgetUtil.getStatus(usage);
       const remainingBudget = Math.max(0, budget - expense);
 
+      let alertHtml = '';
+      if (usage >= 100) {
+        alertHtml = `
+          <div class="pundi-alert-badge alert-danger" style="margin-top: 8px;">
+            <i data-lucide="alert-triangle" style="width:13px;height:13px;flex-shrink:0;"></i>
+            <span>Over budget (${usage}%)</span>
+          </div>
+        `;
+      } else if (usage >= 90) {
+        alertHtml = `
+          <div class="pundi-alert-badge alert-danger" style="margin-top: 8px;">
+            <i data-lucide="alert-triangle" style="width:13px;height:13px;flex-shrink:0;"></i>
+            <span>Budget hampir habis (${usage}%)</span>
+          </div>
+        `;
+      } else if (usage >= 75) {
+        alertHtml = `
+          <div class="pundi-alert-badge alert-warning" style="margin-top: 8px;">
+            <i data-lucide="alert-triangle" style="width:13px;height:13px;flex-shrink:0;"></i>
+            <span>Budget terpakai ${usage}%</span>
+          </div>
+        `;
+      }
+
       return `
         <div class="card pundi-card" data-pundi-id="${p.id}">
           <div class="card-head">
@@ -517,6 +541,7 @@ async function loadPundiView() {
             <span>Sisa Budget: <strong class="num">${Currency.format(remainingBudget)}</strong></span>
             <span class="badge ${status.badgeClass}">${status.label}</span>
           </div>
+          ${alertHtml}
         </div>
       `;
     }).join('');
@@ -1897,32 +1922,32 @@ AuthService.requireAuth(async (user) => {
   CustomSelect.init('tx-dest-pundi');
   CustomSelect.init('tx-category');
 
-  // Bind navigation links
-  dom.navLinks.forEach(link => {
-    link.addEventListener('click', (e) => {
+  // Bind navigation links (global delegation + direct links)
+  document.addEventListener('click', (e) => {
+    const trigger = e.target.closest('[data-view]');
+    if (trigger) {
       e.preventDefault();
-      const target = link.getAttribute('data-view');
-      navigateTo(target);
-    });
+      const target = trigger.getAttribute('data-view');
+      if (target) navigateTo(target);
+    }
+  });
+
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.replace('#', '') || 'dashboard';
+    if (dom.views[hash] && currentView !== hash) {
+      navigateTo(hash);
+    }
   });
 
   // Attach live thousands separator (.) formatting to all amount inputs
   Currency.attachAll(document);
 
-  // Quick Action Buttons (Pemasukan, Pengeluaran, Transfer)
-  document.querySelectorAll('.btn-quick-income').forEach(btn => {
-    btn.addEventListener('click', () => openTxModal(null, 'INCOME'));
-  });
-  document.querySelectorAll('.btn-quick-expense').forEach(btn => {
-    btn.addEventListener('click', () => openTxModal(null, 'EXPENSE'));
-  });
-  document.querySelectorAll('.btn-quick-transfer').forEach(btn => {
-    btn.addEventListener('click', () => openTxModal(null, 'TRANSFER'));
-  });
-
   // Back button on Pundi view to return to dashboard
   document.querySelectorAll('.btn-back-dashboard').forEach(btn => {
-    btn.addEventListener('click', () => navigateTo('dashboard'));
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateTo('dashboard');
+    });
   });
 
   // FAB / Add Transaction buttons (including center bottom nav button)
