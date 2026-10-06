@@ -1,0 +1,19 @@
+{
+  "name": "DompetQu",
+  "short_name": "DompetQu",
+  "description": "Aplikasi manajemen keuangan pribadi PWA dengan konsep Pundi-Pundi",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#111315",
+  "background_color": "#111315",
+  "icons": [
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
