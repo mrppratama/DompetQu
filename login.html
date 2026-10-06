@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Masuk — DompetQu</title>
+  <meta name="description" content="Masuk ke akun DompetQu untuk mengelola keuangan pribadi Anda.">
+  <meta name="theme-color" content="#111315">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg">
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="auth-body">
+
+  <main class="auth">
+    <a href="login.html" class="auth-brand">
+      <img src="assets/icons/icon.svg" alt="DompetQu">
+      <span>DompetQu</span>
+    </a>
+
+    <h1 class="auth-title">Selamat Datang Kembali</h1>
+    <p class="auth-subtitle">Kelola pemasukan, pengeluaran, dan budget Pundi Anda.</p>
+
+    <div id="auth-alert" class="form-error" style="margin-bottom: 16px;" hidden></div>
+
+    <form id="form-login" class="form">
+      <div class="field">
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" class="input" placeholder="nama@email.com" required autocomplete="email">
+      </div>
+
+      <div class="field">
+        <div class="field-row">
+          <label for="login-password">Kata Sandi</label>
+          <a href="forgot-password.html" class="link small">Lupa sandi?</a>
+        </div>
+        <input type="password" id="login-password" class="input" placeholder="Minimal 6 karakter" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="btn-submit" style="margin-top: 8px;">
+        <span>Masuk ke DompetQu</span>
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Belum memiliki akun? <a href="register.html">Daftar sekarang</a>
+    </p>
+  </main>
+
+  <div class="toast-root" role="region" aria-label="Pemberitahuan"></div>
+
+  <script type="module">
+    import { AuthService } from './js/auth.js';
+    import { showToast } from './js/notifications.js';
+    import { refreshIcons } from './js/utils.js';
+
+    refreshIcons();
+
+    // Redirect if already logged in
+    AuthService.redirectIfAuth('index.html');
+
+    const form = document.getElementById('form-login');
+    const alertEl = document.getElementById('auth-alert');
+    const btnSubmit = document.getElementById('btn-submit');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertEl.hidden = true;
+
+      const email = document.getElementById('login-email').value.trim();
+      const pass = document.getElementById('login-password').value;
+
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="spinner"></span><span>Memeriksa...</span>';
+
+      try {
+        await AuthService.login(email, pass);
+        showToast('Login berhasil. Mengalihkan...', 'success');
+        setTimeout(() => {
+          window.location.replace('index.html');
+        }, 500);
+      } catch (err) {
+        alertEl.textContent = err.message || 'Gagal masuk. Periksa email dan kata sandi Anda.';
+        alertEl.hidden = false;
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>Masuk ke DompetQu</span>';
+      }
+    });
+  </script>
+</body>
+</html>

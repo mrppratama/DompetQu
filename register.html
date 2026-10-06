@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Daftar Akun — DompetQu</title>
+  <meta name="description" content="Buat akun DompetQu untuk mulai mengontrol keuangan pribadi Anda secara tenang dan terencana.">
+  <meta name="theme-color" content="#111315">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg">
+
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="auth-body">
+
+  <main class="auth">
+    <a href="login.html" class="auth-brand">
+      <img src="assets/icons/icon.svg" alt="DompetQu">
+      <span>DompetQu</span>
+    </a>
+
+    <h1 class="auth-title">Buat Akun Baru</h1>
+    <p class="auth-subtitle">Mulai atur alokasi uang dengan metode Pundi-Pundi.</p>
+
+    <div id="auth-alert" class="form-error" style="margin-bottom: 16px;" hidden></div>
+
+    <form id="form-register" class="form">
+      <div class="field">
+        <label for="reg-name">Nama Panggilan</label>
+        <input type="text" id="reg-name" class="input" placeholder="Contoh: Pratama" required autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label for="reg-email">Email</label>
+        <input type="email" id="reg-email" class="input" placeholder="nama@email.com" required autocomplete="email">
+      </div>
+
+      <div class="field">
+        <label for="reg-password">Kata Sandi</label>
+        <input type="password" id="reg-password" class="input" placeholder="Minimal 6 karakter" required autocomplete="new-password">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block" id="btn-submit" style="margin-top: 8px;">
+        <span>Daftar Akun</span>
+      </button>
+    </form>
+
+    <p class="auth-footer">
+      Sudah memiliki akun? <a href="login.html">Masuk di sini</a>
+    </p>
+  </main>
+
+  <div class="toast-root" role="region" aria-label="Pemberitahuan"></div>
+
+  <script type="module">
+    import { AuthService } from './js/auth.js';
+    import { showToast } from './js/notifications.js';
+    import { refreshIcons } from './js/utils.js';
+
+    refreshIcons();
+
+    // Redirect if already logged in
+    AuthService.redirectIfAuth('index.html');
+
+    const form = document.getElementById('form-register');
+    const alertEl = document.getElementById('auth-alert');
+    const btnSubmit = document.getElementById('btn-submit');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      alertEl.hidden = true;
+
+      const name = document.getElementById('reg-name').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const pass = document.getElementById('reg-password').value;
+
+      if (pass.length < 6) {
+        alertEl.textContent = 'Kata sandi minimal 6 karakter.';
+        alertEl.hidden = false;
+        return;
+      }
+
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span class="spinner"></span><span>Mendaftarkan...</span>';
+
+      try {
+        await AuthService.register(email, pass, name);
+        showToast('Akun berhasil dibuat! Mengalihkan...', 'success');
+        setTimeout(() => {
+          window.location.replace('index.html');
+        }, 600);
+      } catch (err) {
+        alertEl.textContent = err.message || 'Pendaftaran gagal. Silakan coba lagi.';
+        alertEl.hidden = false;
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<span>Daftar Akun</span>';
+      }
+    });
+  </script>
+</body>
+</html>
