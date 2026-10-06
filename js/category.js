@@ -11,12 +11,13 @@ import {
   setDoc,
   addDoc,
   updateDoc,
+  writeBatch,
   serverTimestamp,
   isConfigured
 } from './firebase-config.js';
 
 export const DEFAULT_EXPENSE_CATEGORIES = [
-  { name: 'Makanan', type: 'EXPENSE', icon: 'utensils', color: '#5FBF8F' },
+  { name: 'Makanan', type: 'EXPENSE', icon: 'utensils', color: '#10B981' },
   { name: 'Transportasi', type: 'EXPENSE', icon: 'car', color: '#6E9FD6' },
   { name: 'Tagihan', type: 'EXPENSE', icon: 'receipt', color: '#D6A85F' },
   { name: 'Belanja', type: 'EXPENSE', icon: 'shopping-bag', color: '#B57EDC' },
@@ -28,7 +29,7 @@ export const DEFAULT_EXPENSE_CATEGORIES = [
 ];
 
 export const DEFAULT_INCOME_CATEGORIES = [
-  { name: 'Gaji', type: 'INCOME', icon: 'banknote', color: '#5FBF8F' },
+  { name: 'Gaji', type: 'INCOME', icon: 'banknote', color: '#10B981' },
   { name: 'Bonus', type: 'INCOME', icon: 'sparkles', color: '#D6A85F' },
   { name: 'Freelance', type: 'INCOME', icon: 'briefcase', color: '#6E9FD6' },
   { name: 'Bisnis', type: 'INCOME', icon: 'trending-up', color: '#5FB8BF' },
@@ -58,9 +59,11 @@ export const CategoryService = {
       const snap = await getDocs(colRef);
       if (!snap.empty) return; // already initialized
 
+      const batch = writeBatch(db);
       const all = [...DEFAULT_EXPENSE_CATEGORIES, ...DEFAULT_INCOME_CATEGORIES];
       for (const item of all) {
-        await addDoc(colRef, {
+        const newDocRef = doc(colRef);
+        batch.set(newDocRef, {
           name: item.name,
           type: item.type,
           icon: item.icon,
@@ -70,13 +73,14 @@ export const CategoryService = {
           updatedAt: serverTimestamp()
         });
       }
+      await batch.commit();
     } catch (err) {
       console.error('[DompetQu] Failed to init default categories:', err);
     }
   },
 
   /**
-   * Fetch all user categories
+   * Fetch all user categories (with auto-seed & foolproof defaults)
    */
   async getCategories(userId) {
     if (!userId) return [];
@@ -95,17 +99,36 @@ export const CategoryService = {
     try {
       const colRef = collection(db, 'users', userId, 'categories');
       const snap = await getDocs(colRef);
-      const list = [];
-      snap.forEach(docSnap => {
-        list.push({ id: docSnap.id, ...docSnap.data() });
-      });
-      // Sort alphabetically
-      list.sort((a, b) => a.name.localeCompare(b.name));
-      return list;
+
+      if (snap.empty) {
+        // Auto-seed if not yet created
+        await this.initDefaultCategories(userId);
+        const retrySnap = await getDocs(colRef);
+        const list = [];
+        retrySnap.forEach(docSnap => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        if (list.length > 0) {
+          list.sort((a, b) => a.name.localeCompare(b.name));
+          return list;
+        }
+      } else {
+        const list = [];
+        snap.forEach(docSnap => {
+          list.push({ id: docSnap.id, ...docSnap.data() });
+        });
+        list.sort((a, b) => a.name.localeCompare(b.name));
+        return list;
+      }
     } catch (err) {
       console.error('[DompetQu] Error fetching categories:', err);
-      return [];
     }
+
+    // Always fallback to standard list so UI never breaks
+    return [
+      ...DEFAULT_EXPENSE_CATEGORIES.map((c, i) => ({ id: `exp_${i}`, ...c, isArchived: false })),
+      ...DEFAULT_INCOME_CATEGORIES.map((c, i) => ({ id: `inc_${i}`, ...c, isArchived: false }))
+    ];
   },
 
   async addCategory(userId, { name, type, icon, color }) {
@@ -118,7 +141,7 @@ export const CategoryService = {
         name: name.trim(),
         type,
         icon: icon || 'tag',
-        color: color || '#5FBF8F',
+        color: color || '#10B981',
         isArchived: false,
         createdAt: new Date().toISOString()
       };
@@ -132,7 +155,7 @@ export const CategoryService = {
       name: name.trim(),
       type,
       icon: icon || 'tag',
-      color: color || '#5FBF8F',
+      color: color || '#10B981',
       isArchived: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()

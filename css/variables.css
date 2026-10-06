@@ -11,12 +11,12 @@
   --border: #30363D;
   --border-soft: #262B31;
 
-  /* Brand */
-  --primary: #5FBF8F;
-  --primary-hover: #6DCA9C;
-  --primary-dark: #3D8F68;
-  --primary-soft: #20382D;
-  --on-primary: #0E1A14;
+  /* Brand — Crisp Vibrant Emerald Green */
+  --primary: #10B981;
+  --primary-hover: #34D399;
+  --primary-dark: #059669;
+  --primary-soft: rgba(16, 185, 129, 0.16);
+  --on-primary: #042419;
 
   /* Text */
   --text: #E6E8EB;
@@ -24,7 +24,7 @@
   --text-3: #737A83;
 
   /* Status */
-  --success: #5FBF8F;
+  --success: #10B981;
   --warning: #D6A85F;
   --critical: #D98F78;
   --danger: #D97878;

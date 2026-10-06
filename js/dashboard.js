@@ -115,7 +115,7 @@ export const DashboardManager = {
 
           return `
             <div class="card pundi-row" data-pundi-id="${p.id}">
-              <div class="avatar avatar-sm" style="background:${p.color || '#5FBF8F'}20; color:${p.color || '#5FBF8F'};">
+              <div class="avatar avatar-sm" style="background:${p.color || '#10B981'}20; color:${p.color || '#10B981'};">
                 <i data-lucide="${escapeHtml(p.icon || 'wallet')}" style="width:18px;height:18px;"></i>
               </div>
               <div class="pundi-main" style="min-width:0;">
@@ -159,7 +159,7 @@ export const DashboardManager = {
             const pct = Math.round((item.total / monthExpense) * 100);
             return `
               <li>
-                <span class="legend-dot" style="--c: ${item.color || '#5FBF8F'};"></span>
+                <span class="legend-dot" style="--c: ${item.color || '#10B981'};"></span>
                 <span class="legend-name">${escapeHtml(item.name)}</span>
                 <span class="num">${Currency.format(item.total)}</span>
                 <span class="legend-pct">${pct}%</span>

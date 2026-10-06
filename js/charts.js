@@ -15,7 +15,7 @@ const THEME = {
   textMuted: '#A0A6AD',
   gridColor: 'rgba(255, 255, 255, 0.05)',
   colors: [
-    '#5FBF8F', // primary mint
+    '#10B981', // vibrant emerald
     '#6E9FD6', // info blue
     '#D6A85F', // warning amber
     '#B57EDC', // soft violet
@@ -118,12 +118,12 @@ export const ChartManager = {
         labels,
         datasets: [{
           data,
-          borderColor: '#5FBF8F',
-          backgroundColor: 'rgba(95, 191, 143, 0.08)',
-          borderWidth: 2.2,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          pointBackgroundColor: '#5FBF8F',
+          borderColor: '#10B981',
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          borderWidth: 2.4,
+          pointRadius: 3.5,
+          pointHoverRadius: 5.5,
+          pointBackgroundColor: '#10B981',
           tension: 0.3,
           fill: true
         }]

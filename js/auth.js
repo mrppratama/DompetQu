@@ -82,7 +82,7 @@ export const AuthService = {
         name: 'Pundi Utama',
         monthlyBudget: 2000000,
         initialBalance: 0,
-        color: '#5FBF8F',
+        color: '#10B981',
         icon: 'wallet'
       });
       return demoUser;
@@ -113,7 +113,7 @@ export const AuthService = {
         name: 'Pundi Utama',
         monthlyBudget: 2000000,
         initialBalance: 0,
-        color: '#5FBF8F',
+        color: '#10B981',
         icon: 'wallet'
       });
 
@@ -145,7 +145,7 @@ export const AuthService = {
           name: 'Pundi Utama',
           monthlyBudget: 2000000,
           initialBalance: 0,
-          color: '#5FBF8F',
+          color: '#10B981',
           icon: 'wallet'
         });
       }

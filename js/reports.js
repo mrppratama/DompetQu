@@ -38,7 +38,7 @@ export const ReportService = {
         expenseByCategory[cat.name].total += amt;
 
         // By Pundi
-        const pundi = pundiMap[t.pundiId] || { name: 'Pundi Lain', color: '#5FBF8F' };
+        const pundi = pundiMap[t.pundiId] || { name: 'Pundi Lain', color: '#10B981' };
         if (!expenseByPundi[pundi.name]) {
           expenseByPundi[pundi.name] = { name: pundi.name, color: pundi.color, total: 0 };
         }

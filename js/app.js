@@ -68,6 +68,10 @@ const dom = {
   formGoal: document.getElementById('form-goal'),
   modalAddGoalSaving: document.getElementById('modal-goal-saving'),
   formGoalSaving: document.getElementById('form-goal-saving'),
+  modalCategories: document.getElementById('modal-categories'),
+  formCategory: document.getElementById('form-category'),
+  btnOpenCatModal: document.getElementById('btn-open-cat-modal'),
+  settingsCatChips: document.getElementById('settings-categories-chips'),
   modalConfirm: document.getElementById('modal-confirm'),
   btnConfirmAction: document.getElementById('btn-confirm-action'),
   confirmMessage: document.getElementById('confirm-message'),
@@ -286,7 +290,7 @@ async function loadPundiView() {
       return `
         <div class="card pundi-card" data-pundi-id="${p.id}">
           <div class="card-head">
-            <div class="avatar" style="background:${p.color || '#5FBF8F'}25; color:${p.color || '#5FBF8F'};">
+            <div class="avatar" style="background:${p.color || '#10B981'}25; color:${p.color || '#10B981'};">
               <i data-lucide="${escapeHtml(p.icon || 'wallet')}" style="width:20px;height:20px;"></i>
             </div>
             <div class="card-head-title">
@@ -429,7 +433,7 @@ if (dom.formPundi) {
     const budget = Currency.parse(document.getElementById('pundi-budget').value);
     const balance = Currency.parse(document.getElementById('pundi-balance').value);
     const icon = dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'wallet';
-    const color = dom.formPundi.querySelector('input[name="pundi_color"]:checked')?.value || '#5FBF8F';
+    const color = dom.formPundi.querySelector('input[name="pundi_color"]:checked')?.value || '#10B981';
 
     const val = Validator.validatePundi({ name, monthlyBudget: budget });
     if (!val.isValid) {
@@ -720,10 +724,54 @@ function openTxModal(txToEdit = null) {
     dateInput.value = DateUtil.todayString();
     typeInputs[0].checked = true; // EXPENSE default
     handleTxTypeChange('EXPENSE');
+
+    // Pre-select first active pundi if none selected
+    if (!pundiSelect.value && cachedPundis.length > 0) {
+      const activePundi = cachedPundis.find(p => !p.isArchived);
+      if (activePundi) pundiSelect.value = activePundi.id;
+    }
+
     if (btnDelete) btnDelete.hidden = true;
   }
 
+  updateTxPundiHint();
   openModal(dom.modalTx);
+}
+
+function updateTxPundiHint() {
+  const pundiSelect = document.getElementById('tx-pundi');
+  const infoEl = document.getElementById('tx-pundi-info');
+  const type = dom.formTx?.querySelector('input[name="tx_type"]:checked')?.value || 'EXPENSE';
+  const amountVal = Currency.parse(document.getElementById('tx-amount')?.value || '0');
+  if (!infoEl || !pundiSelect) return;
+
+  const pundiId = pundiSelect.value;
+  if (!pundiId) {
+    infoEl.innerHTML = '';
+    return;
+  }
+
+  const pundi = cachedPundis.find(p => p.id === pundiId);
+  if (!pundi) {
+    infoEl.innerHTML = '';
+    return;
+  }
+
+  const bal = Number(pundi.balance || 0);
+
+  if (type === 'INCOME') {
+    infoEl.innerHTML = `<span style="color:var(--text-2); font-size:12px;">Saldo saat ini: <strong>${Currency.format(bal)}</strong> (akan bertambah setelah disimpan)</span>`;
+    return;
+  }
+
+  // EXPENSE or TRANSFER
+  if (bal <= 0) {
+    infoEl.innerHTML = `<span style="color:var(--warning); font-size:12px; font-weight:500;">⚠️ Saldo Pundi saat ini Rp0. Catat Pemasukan terlebih dahulu atau atur Saldo Pundi.</span>`;
+  } else if (amountVal > 0 && amountVal > bal) {
+    infoEl.innerHTML = `<span style="color:var(--danger); font-size:12px; font-weight:500;">⚠️ Melebihi saldo! Tersedia: <strong>${Currency.format(bal)}</strong> (kurang ${Currency.format(amountVal - bal)}).</span>`;
+  } else {
+    infoEl.innerHTML = `<span style="color:var(--text-2); font-size:12px;">Saldo tersedia di Pundi ini: <strong>${Currency.format(bal)}</strong></span>`;
+  }
 }
 
 function handleTxTypeChange(selectedType) {
@@ -747,15 +795,27 @@ function handleTxTypeChange(selectedType) {
     if (destField) destField.hidden = true;
     if (pundiLabel) pundiLabel.textContent = 'Bayar dari Pundi';
   }
+
+  updateTxPundiHint();
 }
 
-// Listen to segmented radio change for tx type
+// Listen to segmented radio change for tx type & inputs
 if (dom.formTx) {
   dom.formTx.querySelectorAll('input[name="tx_type"]').forEach(radio => {
     radio.addEventListener('change', (e) => {
       handleTxTypeChange(e.target.value);
     });
   });
+
+  const txPundiSelect = document.getElementById('tx-pundi');
+  if (txPundiSelect) {
+    txPundiSelect.addEventListener('change', updateTxPundiHint);
+  }
+
+  const txAmountInput = document.getElementById('tx-amount');
+  if (txAmountInput) {
+    txAmountInput.addEventListener('input', updateTxPundiHint);
+  }
 
   // Transaction form submit
   dom.formTx.addEventListener('submit', async (e) => {
@@ -785,7 +845,11 @@ if (dom.formTx) {
     });
 
     if (!val.isValid) {
-      showToast(val.firstError, 'error');
+      if (val.firstError === 'Saldo Pundi tidak mencukupi.' || val.firstError === 'Saldo Pundi tidak mencukupi untuk transfer.') {
+        showToast(`Saldo Pundi "${sourcePundi?.name || 'terpilih'}" tidak mencukupi (${Currency.format(sourceBalance)}). Tambahkan Pemasukan terlebih dahulu ke Pundi ini atau atur Saldo Pundi.`, 'error');
+      } else {
+        showToast(val.firstError, 'error');
+      }
       return;
     }
 
@@ -1137,7 +1201,7 @@ async function loadReportsView() {
         return `
           <div class="breakdown-item">
             <div class="breakdown-name">
-              <span class="legend-dot" style="--c: ${c.color || '#5FBF8F'};"></span>
+              <span class="legend-dot" style="--c: ${c.color || '#10B981'};"></span>
               <span>${escapeHtml(c.name)}</span>
             </div>
             <div class="num"><strong>${Currency.format(c.total)}</strong> <span class="subtle">(${pct}%)</span></div>
@@ -1161,7 +1225,7 @@ async function loadReportsView() {
         return `
           <div class="breakdown-item">
             <div class="breakdown-name">
-              <i data-lucide="wallet" class="icon" style="width:14px;height:14px;color:${p.color || '#5FBF8F'};"></i>
+              <i data-lucide="wallet" class="icon" style="width:14px;height:14px;color:${p.color || '#10B981'};"></i>
               <span>${escapeHtml(p.name)}</span>
             </div>
             <div class="num"><strong>${Currency.format(p.total)}</strong> <span class="subtle">(${pct}%)</span></div>
@@ -1203,12 +1267,166 @@ document.querySelectorAll('[data-rep-period]').forEach(chip => {
 });
 
 /* ==========================================================================
-   VIEW 5: SETTINGS & PREFERENCES
+   VIEW 5: SETTINGS & PREFERENCES & CATEGORIES
    ========================================================================== */
+
+let activeCatModalType = 'EXPENSE';
+
+function renderSettingsCategoryChips() {
+  const container = dom.settingsCatChips || document.getElementById('settings-categories-chips');
+  if (!container) return;
+
+  const activeExpense = cachedCategories.filter(c => !c.isArchived && c.type === 'EXPENSE');
+  const activeIncome = cachedCategories.filter(c => !c.isArchived && c.type === 'INCOME');
+
+  container.innerHTML = `
+    <div style="width:100%; margin-bottom:6px;"><span class="subtle small" style="font-weight:600;">Pengeluaran (${activeExpense.length} kategori):</span></div>
+    <div class="chips" style="flex-wrap: wrap; margin-bottom: 14px; gap:6px;">
+      ${activeExpense.length ? activeExpense.map(c => `
+        <span class="chip" style="font-size:12px; border-color:${c.color || 'var(--border)'}; display:inline-flex; align-items:center; gap:6px;">
+          <span class="legend-dot" style="--c:${c.color || '#10B981'}; width:8px; height:8px; margin:0;"></span>
+          ${escapeHtml(c.name)}
+        </span>
+      `).join('') : '<span class="subtle small">Belum ada kategori pengeluaran aktif.</span>'}
+    </div>
+    <div style="width:100%; margin-bottom:6px;"><span class="subtle small" style="font-weight:600;">Pemasukan (${activeIncome.length} kategori):</span></div>
+    <div class="chips" style="flex-wrap: wrap; gap:6px;">
+      ${activeIncome.length ? activeIncome.map(c => `
+        <span class="chip" style="font-size:12px; border-color:${c.color || 'var(--border)'}; display:inline-flex; align-items:center; gap:6px;">
+          <span class="legend-dot" style="--c:${c.color || '#10B981'}; width:8px; height:8px; margin:0;"></span>
+          ${escapeHtml(c.name)}
+        </span>
+      `).join('') : '<span class="subtle small">Belum ada kategori pemasukan aktif.</span>'}
+    </div>
+  `;
+}
+
+function renderCategoryModalList(type = activeCatModalType) {
+  activeCatModalType = type;
+  const listEl = document.getElementById('modal-cat-list');
+  const countEl = document.getElementById('modal-cat-count');
+  const hiddenTypeInput = document.getElementById('new-cat-type');
+  const nameInput = document.getElementById('new-cat-name');
+  const btnExpense = document.getElementById('btn-cat-type-expense');
+  const btnIncome = document.getElementById('btn-cat-type-income');
+
+  if (hiddenTypeInput) hiddenTypeInput.value = type;
+
+  if (btnExpense && btnIncome) {
+    if (type === 'EXPENSE') {
+      btnExpense.classList.add('is-active');
+      btnIncome.classList.remove('is-active');
+      if (nameInput) nameInput.placeholder = 'Contoh: Makanan, Belanja, Skincare';
+    } else {
+      btnExpense.classList.remove('is-active');
+      btnIncome.classList.add('is-active');
+      if (nameInput) nameInput.placeholder = 'Contoh: Gaji, Freelance, Dividen';
+    }
+  }
+
+  if (!listEl) return;
+
+  const cats = cachedCategories.filter(c => c.type === type);
+  if (countEl) countEl.textContent = `${cats.length} Kategori`;
+
+  if (cats.length === 0) {
+    listEl.innerHTML = '<p class="subtle small" style="padding:12px 0;">Belum ada kategori untuk jenis ini.</p>';
+    return;
+  }
+
+  listEl.innerHTML = cats.map(cat => `
+    <div class="card" style="padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+        <span class="legend-dot" style="--c: ${cat.color || '#10B981'}; width: 10px; height: 10px; flex-shrink: 0;"></span>
+        <span style="font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(cat.name)}</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+        <span class="badge ${cat.isArchived ? '' : 'badge-good'}" style="font-size: 11px;">
+          ${cat.isArchived ? 'Diarsipkan' : 'Aktif'}
+        </span>
+        <button type="button" class="icon-btn icon-btn-sm btn-toggle-cat-archive" data-cat-id="${cat.id}" data-archived="${cat.isArchived ? 'true' : 'false'}" title="${cat.isArchived ? 'Aktifkan Kategori' : 'Arsipkan Kategori'}">
+          <i data-lucide="${cat.isArchived ? 'archive-restore' : 'archive'}" style="width: 14px; height: 14px;"></i>
+        </button>
+      </div>
+    </div>
+  `).join('');
+
+  refreshIcons();
+
+  listEl.querySelectorAll('.btn-toggle-cat-archive').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const catId = e.currentTarget.getAttribute('data-cat-id');
+      const isArchived = e.currentTarget.getAttribute('data-archived') === 'true';
+      try {
+        await CategoryService.toggleArchiveCategory(currentUser.uid, catId, !isArchived);
+        cachedCategories = await CategoryService.getCategories(currentUser.uid);
+        renderCategoryModalList(activeCatModalType);
+        renderSettingsCategoryChips();
+        populateCategorySelects();
+        showToast(isArchived ? 'Kategori diaktifkan kembali.' : 'Kategori berhasil diarsipkan.', 'info');
+      } catch (err) {
+        showToast(formatFriendlyError(err), 'error');
+      }
+    });
+  });
+}
+
+function initCategoryListeners() {
+  if (dom.btnOpenCatModal) {
+    dom.btnOpenCatModal.addEventListener('click', () => {
+      renderCategoryModalList('EXPENSE');
+      openModal(dom.modalCategories);
+    });
+  }
+
+  const btnExpense = document.getElementById('btn-cat-type-expense');
+  const btnIncome = document.getElementById('btn-cat-type-income');
+  if (btnExpense) {
+    btnExpense.addEventListener('click', () => renderCategoryModalList('EXPENSE'));
+  }
+  if (btnIncome) {
+    btnIncome.addEventListener('click', () => renderCategoryModalList('INCOME'));
+  }
+
+  if (dom.formCategory) {
+    dom.formCategory.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById('new-cat-name');
+      const name = nameInput ? nameInput.value.trim() : '';
+      const type = document.getElementById('new-cat-type')?.value || activeCatModalType;
+
+      if (!name) return;
+
+      const btnSubmit = dom.formCategory.querySelector('button[type="submit"]');
+      if (btnSubmit) btnSubmit.disabled = true;
+
+      try {
+        await CategoryService.addCategory(currentUser.uid, {
+          name,
+          type,
+          icon: 'tag',
+          color: '#10B981'
+        });
+        if (nameInput) nameInput.value = '';
+        cachedCategories = await CategoryService.getCategories(currentUser.uid);
+        renderCategoryModalList(type);
+        renderSettingsCategoryChips();
+        populateCategorySelects();
+        showToast(`Kategori "${name}" berhasil ditambahkan.`, 'success');
+      } catch (err) {
+        showToast(formatFriendlyError(err), 'error');
+      } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+      }
+    });
+  }
+}
 
 function loadSettingsView() {
   const settings = SettingsService.getSettings();
   const widgets = settings.widgets || {};
+
+  renderSettingsCategoryChips();
 
   // Setup widget switch toggles
   const widgetToggles = [
@@ -1306,6 +1524,9 @@ AuthService.requireAuth(async (user) => {
 
   // Preload baseline data
   await refreshBaselineData();
+
+  // Init category management listeners
+  initCategoryListeners();
 
   // Bind navigation links
   dom.navLinks.forEach(link => {

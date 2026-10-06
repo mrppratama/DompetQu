@@ -445,6 +445,19 @@
           </div>
         </div>
 
+        <!-- Categories Management Section -->
+        <div class="section-head" style="margin-top: 24px; margin-bottom: 10px;">
+          <h3 class="section-title">Kategori Transaksi</h3>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-open-cat-modal">
+            <i data-lucide="tag" class="icon" style="width:14px;height:14px;"></i>
+            <span>Kelola Kategori</span>
+          </button>
+        </div>
+        <div class="card" style="margin-bottom: 24px;">
+          <p class="subtle small" style="margin-bottom: 12px;">Sesuaikan pos kategori pengeluaran dan pemasukan sesuai kebutuhan Anda.</p>
+          <div id="settings-categories-chips" class="chips" style="flex-wrap: wrap;"></div>
+        </div>
+
         <!-- General App Settings -->
         <h3 class="section-title" style="margin-bottom: 10px;">Aplikasi</h3>
         <div class="card settings-group" style="margin-bottom: 24px;">
@@ -458,7 +471,7 @@
           <div class="setting-row">
             <div class="setting-text">
               <span class="setting-title">Tema Tampilan</span>
-              <span class="setting-desc">Calm Dark Finance</span>
+              <span class="setting-desc">Calm Dark Finance (Emerald Vibrant)</span>
             </div>
             <span class="badge">Aktif</span>
           </div>
@@ -551,6 +564,7 @@
           <div class="field">
             <label for="tx-pundi" id="tx-pundi-label">Pundi Sumber</label>
             <select id="tx-pundi" class="input" data-pundi-select required></select>
+            <span id="tx-pundi-info" class="hint" style="color:var(--text-2); margin-top:2px;"></span>
           </div>
 
           <!-- Destination Pundi (for TRANSFER only) -->
@@ -635,7 +649,7 @@
           <div class="field">
             <label>Warna Label</label>
             <div class="swatches">
-              <label class="swatch"><input type="radio" name="pundi_color" value="#5FBF8F" checked><span style="--c:#5FBF8F;"></span></label>
+              <label class="swatch"><input type="radio" name="pundi_color" value="#10B981" checked><span style="--c:#10B981;"></span></label>
               <label class="swatch"><input type="radio" name="pundi_color" value="#6E9FD6"><span style="--c:#6E9FD6;"></span></label>
               <label class="swatch"><input type="radio" name="pundi_color" value="#D6A85F"><span style="--c:#D6A85F;"></span></label>
               <label class="swatch"><input type="radio" name="pundi_color" value="#B57EDC"><span style="--c:#B57EDC;"></span></label>
@@ -741,6 +755,56 @@
             <button type="submit" class="btn btn-primary">Simpan Progres</button>
           </div>
         </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: CATEGORY MANAGEMENT                                     -->
+  <!-- ============================================================== -->
+  <dialog id="modal-categories" class="modal">
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h3 class="modal-title">Kelola Kategori Transaksi</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p class="subtle small" style="margin-bottom: 14px;">Tambah kategori baru atau kelola kategori yang sudah ada untuk pengeluaran dan pemasukan Anda.</p>
+
+        <!-- Segmented Tab Filter for Category Type -->
+        <div class="segmented" style="margin-bottom: 16px;">
+          <button type="button" class="seg-btn is-active" id="btn-cat-type-expense">Pengeluaran</button>
+          <button type="button" class="seg-btn" id="btn-cat-type-income">Pemasukan</button>
+        </div>
+
+        <!-- Add Category Form -->
+        <form id="form-category" class="form" style="margin-bottom: 20px;">
+          <input type="hidden" id="new-cat-type" value="EXPENSE">
+          <label for="new-cat-name" class="small" style="font-weight: 500; display: block; margin-bottom: 6px;">Tambah Kategori Baru</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="new-cat-name" class="input" placeholder="Contoh: Skincare, Freelance, Donasi" required style="flex: 1;">
+            <button type="submit" class="btn btn-primary" style="flex-shrink: 0; padding: 0 16px;">
+              <i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i>
+              <span>Tambah</span>
+            </button>
+          </div>
+        </form>
+
+        <!-- Category List -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span class="subtle small" style="text-transform: uppercase; font-weight: 600; letter-spacing: 0.04em;">Daftar Kategori Aktif</span>
+          <span class="subtle small" id="modal-cat-count">0 Kategori</span>
+        </div>
+        <div id="modal-cat-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; padding-right: 4px;">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div class="form-actions" style="margin-top: 18px;">
+          <button type="button" class="btn btn-secondary" data-close-modal>Selesai</button>
+        </div>
       </div>
     </div>
   </dialog>

@@ -76,7 +76,7 @@ export const PundiService = {
   /**
    * Create new Pundi
    */
-  async createPundi(userId, { name, description = '', monthlyBudget = 0, initialBalance = 0, color = '#5FBF8F', icon = 'wallet' }) {
+  async createPundi(userId, { name, description = '', monthlyBudget = 0, initialBalance = 0, color = '#10B981', icon = 'wallet' }) {
     if (!userId) throw new Error('User belum login');
 
     const budgetInt = Math.max(0, parseInt(monthlyBudget, 10) || 0);
@@ -87,7 +87,7 @@ export const PundiService = {
       description: (description || '').trim(),
       monthlyBudget: budgetInt,
       balance: balanceInt,
-      color: color || '#5FBF8F',
+      color: color || '#10B981',
       icon: icon || 'wallet',
       warning75: true,
       warning90: true,
