@@ -95,8 +95,8 @@
             <i data-lucide="wifi-off" class="icon" style="width:13px;height:13px;"></i>
             <span>Offline</span>
           </span>
-          <button type="button" class="icon-btn btn-open-tx-modal" aria-label="Tambah Transaksi">
-            <i data-lucide="plus" class="icon" style="width:20px;height:20px;"></i>
+          <button type="button" class="profile-avatar-btn" id="btn-topbar-profile" aria-label="Menu Profil & Pengaturan">
+            <span class="profile-avatar-initial" id="topbar-avatar-initial">P</span>
           </button>
         </div>
       </header>
@@ -563,20 +563,47 @@
           <!-- Pundi Selection -->
           <div class="field">
             <label for="tx-pundi" id="tx-pundi-label">Pundi Sumber</label>
-            <select id="tx-pundi" class="input" data-pundi-select required></select>
+            <div class="custom-select-wrapper" id="cs-wrap-tx-pundi">
+              <select id="tx-pundi" class="visually-hidden-select" data-pundi-select required></select>
+              <button type="button" class="custom-select-trigger" id="cs-trigger-tx-pundi" aria-haspopup="listbox" aria-expanded="false">
+                <span class="custom-select-value">
+                  <span class="custom-select-placeholder">Pilih Pundi...</span>
+                </span>
+                <i data-lucide="chevron-down" class="custom-select-chevron"></i>
+              </button>
+              <div class="custom-select-dropdown" id="cs-dropdown-tx-pundi" role="listbox"></div>
+            </div>
             <span id="tx-pundi-info" class="hint" style="color:var(--text-2); margin-top:2px;"></span>
           </div>
 
           <!-- Destination Pundi (for TRANSFER only) -->
           <div class="field" id="tx-field-destination" hidden>
             <label for="tx-dest-pundi">Pundi Tujuan</label>
-            <select id="tx-dest-pundi" class="input" data-pundi-select></select>
+            <div class="custom-select-wrapper" id="cs-wrap-tx-dest-pundi">
+              <select id="tx-dest-pundi" class="visually-hidden-select" data-pundi-select></select>
+              <button type="button" class="custom-select-trigger" id="cs-trigger-tx-dest-pundi" aria-haspopup="listbox" aria-expanded="false">
+                <span class="custom-select-value">
+                  <span class="custom-select-placeholder">Pilih Pundi Tujuan...</span>
+                </span>
+                <i data-lucide="chevron-down" class="custom-select-chevron"></i>
+              </button>
+              <div class="custom-select-dropdown" id="cs-dropdown-tx-dest-pundi" role="listbox"></div>
+            </div>
           </div>
 
           <!-- Category Selection (for EXPENSE and INCOME) -->
           <div class="field" id="tx-field-category">
             <label for="tx-category">Kategori</label>
-            <select id="tx-category" class="input" data-category-select></select>
+            <div class="custom-select-wrapper" id="cs-wrap-tx-category">
+              <select id="tx-category" class="visually-hidden-select" data-category-select></select>
+              <button type="button" class="custom-select-trigger" id="cs-trigger-tx-category" aria-haspopup="listbox" aria-expanded="false">
+                <span class="custom-select-value">
+                  <span class="custom-select-placeholder">Pilih Kategori...</span>
+                </span>
+                <i data-lucide="chevron-down" class="custom-select-chevron"></i>
+              </button>
+              <div class="custom-select-dropdown" id="cs-dropdown-tx-category" role="listbox"></div>
+            </div>
           </div>
 
           <!-- Date & Note Row -->
@@ -805,6 +832,167 @@
         <div class="form-actions" style="margin-top: 18px;">
           <button type="button" class="btn btn-secondary" data-close-modal>Selesai</button>
         </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: PROFILE & QUICK SETTINGS                                -->
+  <!-- ============================================================== -->
+  <dialog id="modal-profile" class="modal">
+    <div class="modal-panel" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Profil & Menu</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding-top: 6px;">
+        <!-- Profile User Info Card -->
+        <div class="profile-card" style="display: flex; align-items: center; gap: 14px; padding: 14px; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); margin-bottom: 16px;">
+          <div class="profile-avatar-large" id="profile-modal-avatar">P</div>
+          <div style="flex: 1; min-width: 0;">
+            <h4 class="user-display-name" style="font-size: 16px; font-weight: 600; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Pengguna</h4>
+            <p class="user-display-email subtle small" style="margin: 2px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">user@dompetqu.app</p>
+            <span class="badge badge-good" style="font-size: 11px; padding: 2px 8px;">
+              <i data-lucide="cloud" class="icon" style="width: 11px; height: 11px; margin-right: 4px;"></i>
+              <span>Cloud Sync Aktif</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Quick Settings & Actions List -->
+        <div class="profile-menu-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
+          <!-- Kelola Kategori Transaksi -->
+          <button type="button" class="profile-menu-item" id="profile-btn-categories">
+            <div class="profile-menu-item-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--primary);">
+              <i data-lucide="tag" class="icon" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div class="profile-menu-item-text">
+              <span class="title">Kelola Kategori Transaksi</span>
+              <span class="desc">Atur pos kategori pengeluaran & pemasukan</span>
+            </div>
+            <i data-lucide="chevron-right" class="icon" style="width: 16px; height: 16px; color: var(--text-3);"></i>
+          </button>
+
+          <!-- Buka Pengaturan Lengkap -->
+          <button type="button" class="profile-menu-item" id="profile-btn-settings">
+            <div class="profile-menu-item-icon" style="background: rgba(110, 159, 214, 0.15); color: #6E9FD6;">
+              <i data-lucide="sliders" class="icon" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div class="profile-menu-item-text">
+              <span class="title">Pengaturan Aplikasi</span>
+              <span class="desc">Kustomisasi widget dashboard & preferensi</span>
+            </div>
+            <i data-lucide="chevron-right" class="icon" style="width: 16px; height: 16px; color: var(--text-3);"></i>
+          </button>
+
+          <!-- Install Aplikasi (PWA) -->
+          <div class="profile-menu-item" id="profile-install-row" style="cursor: default;">
+            <div class="profile-menu-item-icon" style="background: rgba(214, 168, 95, 0.15); color: #D6A85F;">
+              <i data-lucide="download" class="icon" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div class="profile-menu-item-text">
+              <span class="title">Install Aplikasi DompetQu</span>
+              <span class="desc" id="profile-install-desc">Pasang di perangkat untuk akses instan & offline</span>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btn-install-app" style="flex-shrink: 0;">
+              <span>Install</span>
+            </button>
+            <span class="badge badge-good" id="badge-app-installed" hidden style="font-size: 11px;">Terpasang</span>
+          </div>
+
+          <!-- Info Versi & Changelog -->
+          <button type="button" class="profile-menu-item" id="profile-btn-changelog">
+            <div class="profile-menu-item-icon" style="background: rgba(181, 126, 220, 0.15); color: #B57EDC;">
+              <i data-lucide="sparkles" class="icon" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div class="profile-menu-item-text">
+              <span class="title">Versi Aplikasi</span>
+              <span class="desc">DompetQu v1.2.0 &bull; Klik untuk riwayat pembaruan</span>
+            </div>
+            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.2.0</span>
+          </button>
+        </div>
+
+        <!-- Logout Button -->
+        <button type="button" class="btn btn-ghost-danger btn-block" id="profile-btn-logout" style="height: 40px;">
+          <i data-lucide="log-out" class="icon" style="width: 16px; height: 16px;"></i>
+          <span>Keluar dari Akun</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: CHANGELOG (Catatan Pembaruan)                           -->
+  <!-- ============================================================== -->
+  <dialog id="modal-changelog" class="modal">
+    <div class="modal-panel" style="max-width: 520px;">
+      <div class="modal-header">
+        <div>
+          <h3 class="modal-title">Riwayat Pembaruan</h3>
+          <p class="subtle small" style="margin-top: 2px;">Catatan rilis dan fitur baru DompetQu</p>
+        </div>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding-right: 4px;">
+        <!-- Version 1.2.0 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.2.0</span>
+              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
+            </div>
+            <span class="changelog-date">6 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Custom Dropdown UI:</strong> Dropdown pilihan Pundi & Kategori kini menggunakan UI kustom bertema Calm Dark Finance tanpa tampilan default browser.</li>
+            <li><strong>Menu Profil Terpadu:</strong> Ikon profil di pojok kanan atas dengan akses cepat ke kategori, pengaturan, status install PWA, dan versi aplikasi.</li>
+            <li><strong>Tema Emerald Vibrant:</strong> Pembaruan warna hijau utama ke emerald segar (<code style="color:var(--primary); font-size:12px;">#10B981</code>) dengan kontras tinggi.</li>
+            <li><strong>Live Saldo & Validasi Cerdas:</strong> Peringatan saldo otomatis pada form transaksi untuk mencegah kesalahan saldo tidak cukup.</li>
+            <li><strong>Manajemen Kategori:</strong> Tambah dan arsipkan kategori kustom untuk pengeluaran maupun pemasukan.</li>
+          </ul>
+        </div>
+
+        <!-- Version 1.1.0 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.1.0</span>
+            </div>
+            <span class="changelog-date">5 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Sinkronisasi Cloud Firebase:</strong> Integrasi autentikasi email & kata sandi dengan database Cloud Firestore.</li>
+            <li><strong>Sistem Multi-Pundi:</strong> Pembagian uang ke berbagai pos pengeluaran mandiri dengan batas anggaran bulanan.</li>
+            <li><strong>Grafik Interaktif:</strong> Visualisasi chart donat pengeluaran dan ringkasan arus kas bulanan.</li>
+            <li><strong>Laporan Keuangan:</strong> Analisis pengeluaran per kategori dan fitur salin ringkasan ke clipboard.</li>
+          </ul>
+        </div>
+
+        <!-- Version 1.0.0 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.0.0</span>
+            </div>
+            <span class="changelog-date">4 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Rilis Perdana DompetQu:</strong> Aplikasi Progressive Web App (PWA) untuk manajemen keuangan pribadi yang ringan dan cepat.</li>
+            <li><strong>Mode Gelap Nyaman:</strong> Desain Calm Dark Finance yang modern dan tidak menyilaukan mata.</li>
+            <li><strong>Target Keuangan:</strong> Pencatatan progres tabungan untuk impian finansial Anda.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="form-actions" style="margin-top: 18px;">
+        <button type="button" class="btn btn-secondary" data-close-modal>Tutup</button>
       </div>
     </div>
   </dialog>

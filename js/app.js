@@ -72,11 +72,201 @@ const dom = {
   formCategory: document.getElementById('form-category'),
   btnOpenCatModal: document.getElementById('btn-open-cat-modal'),
   settingsCatChips: document.getElementById('settings-categories-chips'),
+  modalProfile: document.getElementById('modal-profile'),
+  btnTopbarProfile: document.getElementById('btn-topbar-profile'),
+  topbarAvatarInitial: document.getElementById('topbar-avatar-initial'),
+  profileModalAvatar: document.getElementById('profile-modal-avatar'),
+  modalChangelog: document.getElementById('modal-changelog'),
   modalConfirm: document.getElementById('modal-confirm'),
   btnConfirmAction: document.getElementById('btn-confirm-action'),
   confirmMessage: document.getElementById('confirm-message'),
   confirmSub: document.getElementById('confirm-sub')
 };
+
+/* ==========================================================================
+   CUSTOM SELECT DROPDOWN COMPONENT (Replaces Native Browser UI)
+   ========================================================================== */
+
+const CustomSelect = {
+  initialized: new Set(),
+
+  init(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select || this.initialized.has(selectId)) return;
+    this.initialized.add(selectId);
+
+    const wrapper = select.closest('.custom-select-wrapper');
+    if (!wrapper) return;
+
+    const trigger = wrapper.querySelector('.custom-select-trigger');
+    if (!trigger) return;
+
+    // Toggle menu on trigger click
+    trigger.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const isOpen = wrapper.classList.contains('is-open');
+      CustomSelect.closeAll();
+      if (!isOpen) {
+        wrapper.classList.add('is-open');
+        trigger.setAttribute('aria-expanded', 'true');
+      }
+    });
+
+    // Native select change event should update custom trigger
+    select.addEventListener('change', () => {
+      CustomSelect.updateTrigger(select);
+    });
+  },
+
+  sync(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+
+    if (!this.initialized.has(selectId)) {
+      this.init(selectId);
+    }
+
+    const wrapper = select.closest('.custom-select-wrapper');
+    if (!wrapper) return;
+
+    const dropdown = wrapper.querySelector('.custom-select-dropdown');
+    if (!dropdown) return;
+
+    dropdown.innerHTML = '';
+    const options = Array.from(select.options);
+
+    options.forEach(opt => {
+      if (!opt.value) return; // Skip empty placeholder
+
+      let colorDot = '';
+      let subText = '';
+      let mainText = opt.text;
+
+      // Extract balance if option text is "Nama Pundi (Rp 1.000.000)"
+      const matchPundi = opt.text.match(/^(.*?)\s*(\(Rp\s*[\d\.\,]+\))$/);
+      if (matchPundi) {
+        mainText = matchPundi[1].trim();
+        subText = matchPundi[2].trim();
+      }
+
+      const pundiMatch = cachedPundis.find(p => p.id === opt.value);
+      if (pundiMatch) {
+        colorDot = `<span class="legend-dot" style="--c: ${pundiMatch.color || '#10B981'}; width: 10px; height: 10px; flex-shrink: 0; margin:0;"></span>`;
+        subText = Currency.format(pundiMatch.balance || 0);
+      } else {
+        const catMatch = cachedCategories.find(c => c.id === opt.value);
+        if (catMatch) {
+          colorDot = `<span class="legend-dot" style="--c: ${catMatch.color || '#10B981'}; width: 10px; height: 10px; flex-shrink: 0; margin:0;"></span>`;
+        }
+      }
+
+      const isSelected = (opt.value === select.value);
+
+      const item = document.createElement('div');
+      item.className = `custom-select-option ${isSelected ? 'is-selected' : ''}`;
+      item.setAttribute('role', 'option');
+      item.setAttribute('data-value', opt.value);
+      item.innerHTML = `
+        <div class="custom-select-option-main">
+          ${colorDot}
+          <span class="custom-select-option-label">${escapeHtml(mainText)}</span>
+        </div>
+        ${subText ? `<span class="custom-select-option-sub">${escapeHtml(subText)}</span>` : ''}
+        ${isSelected ? '<i data-lucide="check" class="custom-select-check"></i>' : ''}
+      `;
+
+      item.addEventListener('click', (e) => {
+        e.stopPropagation();
+        select.value = opt.value;
+        CustomSelect.updateTrigger(select);
+        CustomSelect.closeAll();
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+      });
+
+      dropdown.appendChild(item);
+    });
+
+    refreshIcons();
+    CustomSelect.updateTrigger(select);
+  },
+
+  updateTrigger(select) {
+    if (!select) return;
+    const wrapper = select.closest('.custom-select-wrapper');
+    if (!wrapper) return;
+
+    const valEl = wrapper.querySelector('.custom-select-value');
+    if (!valEl) return;
+
+    const selectedOption = select.options[select.selectedIndex];
+    if (!selectedOption || !selectedOption.value) {
+      const placeholderText = select.options[0]?.text || 'Pilih...';
+      valEl.innerHTML = `<span class="custom-select-placeholder">${escapeHtml(placeholderText)}</span>`;
+      return;
+    }
+
+    let colorDot = '';
+    let mainText = selectedOption.text;
+    let subBadge = '';
+
+    const matchPundi = selectedOption.text.match(/^(.*?)\s*(\(Rp\s*[\d\.\,]+\))$/);
+    if (matchPundi) {
+      mainText = matchPundi[1].trim();
+    }
+
+    const pundiMatch = cachedPundis.find(p => p.id === selectedOption.value);
+    if (pundiMatch) {
+      colorDot = `<span class="legend-dot" style="--c: ${pundiMatch.color || '#10B981'}; width: 10px; height: 10px; flex-shrink: 0; margin:0;"></span>`;
+      subBadge = `<span class="badge" style="font-size: 11px; margin-left: auto;">${Currency.format(pundiMatch.balance || 0)}</span>`;
+    } else {
+      const catMatch = cachedCategories.find(c => c.id === selectedOption.value);
+      if (catMatch) {
+        colorDot = `<span class="legend-dot" style="--c: ${catMatch.color || '#10B981'}; width: 10px; height: 10px; flex-shrink: 0; margin:0;"></span>`;
+      }
+    }
+
+    valEl.innerHTML = `
+      ${colorDot}
+      <span style="font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(mainText)}</span>
+      ${subBadge}
+    `;
+
+    // Sync selected class in dropdown
+    const dropdown = wrapper.querySelector('.custom-select-dropdown');
+    if (dropdown) {
+      dropdown.querySelectorAll('.custom-select-option').forEach(el => {
+        const isMatch = el.getAttribute('data-value') === selectedOption.value;
+        el.classList.toggle('is-selected', isMatch);
+        const checkIcon = el.querySelector('.custom-select-check');
+        if (isMatch && !checkIcon) {
+          const check = document.createElement('i');
+          check.setAttribute('data-lucide', 'check');
+          check.className = 'custom-select-check';
+          el.appendChild(check);
+          refreshIcons();
+        } else if (!isMatch && checkIcon) {
+          checkIcon.remove();
+        }
+      });
+    }
+  },
+
+  closeAll() {
+    document.querySelectorAll('.custom-select-wrapper.is-open').forEach(w => {
+      w.classList.remove('is-open');
+      const trigger = w.querySelector('.custom-select-trigger');
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    });
+  }
+};
+
+// Global click outside to dismiss custom dropdowns
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.custom-select-wrapper')) {
+    CustomSelect.closeAll();
+  }
+});
 
 /**
  * Open native HTML5 modal dialog
@@ -225,6 +415,7 @@ function populatePundiSelects() {
         <option value="${p.id}">${escapeHtml(p.name)} (${Currency.format(p.balance || 0)})</option>
       `).join('');
     if (currentVal) select.value = currentVal;
+    if (select.id) CustomSelect.sync(select.id);
   });
 }
 
@@ -239,6 +430,7 @@ function populateCategorySelects(selectedType = 'EXPENSE') {
         <option value="${c.id}">${escapeHtml(c.name)}</option>
       `).join('');
     if (currentVal) select.value = currentVal;
+    if (select.id) CustomSelect.sync(select.id);
   });
 }
 
@@ -734,6 +926,9 @@ function openTxModal(txToEdit = null) {
     if (btnDelete) btnDelete.hidden = true;
   }
 
+  CustomSelect.updateTrigger(pundiSelect);
+  if (destPundiSelect) CustomSelect.updateTrigger(destPundiSelect);
+  if (catSelect) CustomSelect.updateTrigger(catSelect);
   updateTxPundiHint();
   openModal(dom.modalTx);
 }
@@ -797,6 +992,9 @@ function handleTxTypeChange(selectedType) {
   }
 
   updateTxPundiHint();
+  CustomSelect.updateTrigger(document.getElementById('tx-pundi'));
+  CustomSelect.updateTrigger(document.getElementById('tx-dest-pundi'));
+  CustomSelect.updateTrigger(document.getElementById('tx-category'));
 }
 
 // Listen to segmented radio change for tx type & inputs
@@ -1475,6 +1673,132 @@ function loadSettingsView() {
 }
 
 /* ==========================================================================
+   PROFILE MENU, PWA INSTALL, & CHANGELOG
+   ========================================================================== */
+
+let deferredInstallPrompt = null;
+
+function updateProfileAvatar(name = '') {
+  const initial = (name || currentUser?.displayName || currentUser?.email || 'P')
+    .trim().charAt(0).toUpperCase();
+
+  const topbarInitial = document.getElementById('topbar-avatar-initial');
+  const modalAvatar = document.getElementById('profile-modal-avatar');
+  if (topbarInitial) topbarInitial.textContent = initial;
+  if (modalAvatar) modalAvatar.textContent = initial;
+}
+
+function updateInstallUi() {
+  const btnInstall = document.getElementById('btn-install-app');
+  const badgeInstalled = document.getElementById('badge-app-installed');
+  const descEl = document.getElementById('profile-install-desc');
+
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                       window.navigator.standalone === true;
+
+  if (isStandalone) {
+    if (btnInstall) btnInstall.hidden = true;
+    if (badgeInstalled) badgeInstalled.hidden = false;
+    if (descEl) descEl.textContent = 'Aplikasi sudah terpasang (PWA Standalone)';
+  } else {
+    if (btnInstall) btnInstall.hidden = false;
+    if (badgeInstalled) badgeInstalled.hidden = true;
+    if (descEl) descEl.textContent = 'Pasang di perangkat untuk akses instan & offline';
+  }
+}
+
+function initProfileAndChangelog() {
+  // Listen for PWA beforeinstallprompt
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    updateInstallUi();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    updateInstallUi();
+    showToast('DompetQu berhasil terpasang di perangkat Anda!', 'success');
+  });
+
+  updateInstallUi();
+
+  // Topbar profile button opens profile modal
+  const btnTopbarProfile = document.getElementById('btn-topbar-profile');
+  if (btnTopbarProfile) {
+    btnTopbarProfile.addEventListener('click', () => {
+      updateProfileAvatar();
+      updateInstallUi();
+      openModal(dom.modalProfile || document.getElementById('modal-profile'));
+    });
+  }
+
+  // Categories shortcut in Profile modal
+  const btnProfileCategories = document.getElementById('profile-btn-categories');
+  if (btnProfileCategories) {
+    btnProfileCategories.addEventListener('click', () => {
+      closeModal(dom.modalProfile || document.getElementById('modal-profile'));
+      renderCategoryModalList('EXPENSE');
+      openModal(dom.modalCategories || document.getElementById('modal-categories'));
+    });
+  }
+
+  // Settings shortcut in Profile modal
+  const btnProfileSettings = document.getElementById('profile-btn-settings');
+  if (btnProfileSettings) {
+    btnProfileSettings.addEventListener('click', () => {
+      closeModal(dom.modalProfile || document.getElementById('modal-profile'));
+      navigateTo('settings');
+    });
+  }
+
+  // Changelog shortcut in Profile modal
+  const btnProfileChangelog = document.getElementById('profile-btn-changelog');
+  if (btnProfileChangelog) {
+    btnProfileChangelog.addEventListener('click', () => {
+      closeModal(dom.modalProfile || document.getElementById('modal-profile'));
+      openModal(dom.modalChangelog || document.getElementById('modal-changelog'));
+    });
+  }
+
+  // Install app button
+  const btnInstall = document.getElementById('btn-install-app');
+  if (btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          showToast('Memulai instalasi DompetQu...', 'info');
+        }
+        deferredInstallPrompt = null;
+        updateInstallUi();
+      } else {
+        showToast('Untuk install aplikasi: Buka menu browser (titik 3 atau Share), lalu pilih "Tambahkan ke Layar Utama" / "Install App".', 'info');
+      }
+    });
+  }
+
+  // Logout button inside Profile modal
+  const btnProfileLogout = document.getElementById('profile-btn-logout');
+  if (btnProfileLogout) {
+    btnProfileLogout.addEventListener('click', () => {
+      closeModal(dom.modalProfile || document.getElementById('modal-profile'));
+      showConfirm({
+        title: 'Keluar Akun?',
+        message: 'Apakah Anda yakin ingin keluar dari DompetQu?',
+        actionLabel: 'Keluar',
+        isDanger: true,
+        onConfirm: async () => {
+          await AuthService.logout();
+          window.location.replace('login.html');
+        }
+      });
+    });
+  }
+}
+
+/* ==========================================================================
    PWA & APP INITIALIZATION
    ========================================================================== */
 
@@ -1515,6 +1839,7 @@ AuthService.requireAuth(async (user) => {
   // Bind display names
   dom.userDisplayNames.forEach(el => { el.textContent = user.displayName || 'Pengguna'; });
   dom.userEmails.forEach(el => { el.textContent = user.email || ''; });
+  updateProfileAvatar(user.displayName || user.email);
 
   // Init network listeners
   initNetworkStatus();
@@ -1527,6 +1852,14 @@ AuthService.requireAuth(async (user) => {
 
   // Init category management listeners
   initCategoryListeners();
+
+  // Init profile and changelog handlers
+  initProfileAndChangelog();
+
+  // Init custom select controls
+  CustomSelect.init('tx-pundi');
+  CustomSelect.init('tx-dest-pundi');
+  CustomSelect.init('tx-category');
 
   // Bind navigation links
   dom.navLinks.forEach(link => {
