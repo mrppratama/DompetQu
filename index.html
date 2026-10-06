@@ -8,7 +8,7 @@
   <meta name="theme-color" content="#111315">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg">
-  <link rel="apple-touch-icon" href="assets/icons/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Core Stylesheets -->
   <link rel="stylesheet" href="css/variables.css">
@@ -20,7 +20,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
 
-  <!-- Prevent theme flicker -->
+  <!-- Prevent theme flicker & intercept PWA install prompt immediately -->
   <script>
     (function() {
       try {
@@ -28,6 +28,24 @@
         if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
       } catch (e) {}
     })();
+
+    // Intercept PWA beforeinstallprompt early
+    window.deferredInstallPrompt = null;
+    window.addEventListener('beforeinstallprompt', function(e) {
+      e.preventDefault();
+      window.deferredInstallPrompt = e;
+      console.log('[DompetQu] Early beforeinstallprompt captured');
+      if (typeof window.updateInstallUi === 'function') {
+        window.updateInstallUi();
+      }
+    });
+    window.addEventListener('appinstalled', function() {
+      window.deferredInstallPrompt = null;
+      console.log('[DompetQu] App installed successfully');
+      if (typeof window.updateInstallUi === 'function') {
+        window.updateInstallUi();
+      }
+    });
   </script>
 </head>
 <body>
@@ -500,9 +518,9 @@
           <div class="setting-row">
             <div class="setting-text">
               <span class="setting-title">Versi PWA</span>
-              <span class="setting-desc">DompetQu v1.4.0</span>
+              <span class="setting-desc">DompetQu v1.4.1</span>
             </div>
-            <span class="badge">v1.4.0 Standalone</span>
+            <span class="badge">v1.4.1 Standalone</span>
           </div>
         </div>
 
@@ -923,13 +941,13 @@
           </button>
 
           <!-- Pilihan Tema: Mode Gelap / Terang -->
-          <div class="profile-menu-item" id="profile-theme-row" style="cursor: default;">
+          <div class="profile-menu-item profile-theme-card" id="profile-theme-row">
             <div class="profile-menu-item-icon" id="profile-theme-icon" style="background: rgba(110, 159, 214, 0.15); color: #6E9FD6;">
               <i data-lucide="moon" class="icon" style="width: 18px; height: 18px;" id="theme-lucide-icon"></i>
             </div>
             <div class="profile-menu-item-text">
               <span class="title">Mode Tampilan</span>
-              <span class="desc" id="profile-theme-desc">Gelap (Calm Dark)</span>
+              <span class="desc" id="profile-theme-desc">Mode Gelap aktif</span>
             </div>
             <div class="theme-switch-group">
               <button type="button" class="theme-toggle-btn is-active" data-theme-val="dark" title="Mode Gelap" aria-label="Mode Gelap">
@@ -944,7 +962,7 @@
           </div>
 
           <!-- Install Aplikasi (PWA) -->
-          <div class="profile-menu-item" id="profile-install-row" style="cursor: default;">
+          <div class="profile-menu-item profile-install-card" id="profile-install-row" role="button" tabindex="0">
             <div class="profile-menu-item-icon" style="background: rgba(214, 168, 95, 0.15); color: #D6A85F;">
               <i data-lucide="download" class="icon" style="width: 18px; height: 18px;"></i>
             </div>
@@ -965,9 +983,9 @@
             </div>
             <div class="profile-menu-item-text">
               <span class="title">Versi Aplikasi</span>
-              <span class="desc">DompetQu v1.4.0 &bull; Klik untuk riwayat pembaruan</span>
+              <span class="desc">DompetQu v1.4.1 &bull; Klik untuk riwayat pembaruan</span>
             </div>
-            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.4.0</span>
+            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.4.1</span>
           </button>
         </div>
 
@@ -996,12 +1014,26 @@
       </div>
 
       <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding-right: 4px;">
+        <!-- Version 1.4.1 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.4.1</span>
+              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
+            </div>
+            <span class="changelog-date">7 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Instalasi PWA Langsung & Otomatis:</strong> Tombol dan kartu Install Aplikasi kini memicu dialog instalasi native Chrome/browser secara langsung dengan ikon PNG standar & maskable resolusi tinggi (192px & 512px).</li>
+            <li><strong>Desain Kartu Mode Tampilan Bersih:</strong> Tata letak teks Mode Tampilan diperbaiki agar tidak bertumpuk/terlipat berbaris-baris, disempurnakan dengan segmented toggle pill yang rapi dan elegan.</li>
+          </ul>
+        </div>
+
         <!-- Version 1.4.0 -->
         <div class="changelog-card">
           <div class="changelog-head">
             <div class="changelog-version">
               <span>v1.4.0</span>
-              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
             </div>
             <span class="changelog-date">7 Oktober 2026</span>
           </div>

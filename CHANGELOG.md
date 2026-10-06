@@ -4,6 +4,19 @@ Semua perubahan dan pembaruan penting pada aplikasi DompetQu (Personal Finance P
 
 Format pencatatan merujuk pada standar [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
+## [1.4.1] - 2026-10-07
+
+### Perbaikan & Penyempurnaan (Fixes & Improvements)
+- **Instalasi PWA Otomatis & Langsung (Native Install Prompt):**
+  - Menghasilkan dan mendaftarkan ikon PNG resolusi tinggi 192x192 dan 512x512 (termasuk varian *maskable*) ke dalam `manifest.webmanifest` untuk memenuhi standar installability Google Chrome PWA.
+  - Menangkap event `beforeinstallprompt` lebih awal di `<head>` sehingga dialog native browser Chrome selalu siap dipanggil.
+  - Mengaktifkan aksi instalasi langsung saat mengklik tombol "Install" maupun seluruh baris kartu Install Aplikasi di modal profil.
+- **Perbaikan Kartu Mode Tampilan di Modal Profil:**
+  - Mengatasi teks judul dan keterangan yang bertumpuk/terlipat berbaris-baris pada layar mobile.
+  - Menyederhanakan tipografi judul dan status tema (`white-space: nowrap`) serta memperbarui desain segmented switch menjadi kapsul (*pill*) yang ramping dan simetris.
+
+---
+
 ## [1.4.0] - 2026-10-07
 
 ### Fitur Baru & Peningkatan Desain

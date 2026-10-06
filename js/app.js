@@ -1727,6 +1727,7 @@ function updateInstallUi() {
   const btnInstall = document.getElementById('btn-install-app');
   const badgeInstalled = document.getElementById('badge-app-installed');
   const descEl = document.getElementById('profile-install-desc');
+  const rowInstall = document.getElementById('profile-install-row');
 
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                        window.navigator.standalone === true;
@@ -1734,23 +1735,28 @@ function updateInstallUi() {
   if (isStandalone) {
     if (btnInstall) btnInstall.hidden = true;
     if (badgeInstalled) badgeInstalled.hidden = false;
-    if (descEl) descEl.textContent = 'Aplikasi sudah terpasang (PWA Standalone)';
+    if (descEl) descEl.textContent = 'Aplikasi sudah terpasang (PWA)';
+    if (rowInstall) rowInstall.style.cursor = 'default';
   } else {
     if (btnInstall) btnInstall.hidden = false;
     if (badgeInstalled) badgeInstalled.hidden = true;
     if (descEl) descEl.textContent = 'Pasang di perangkat untuk akses instan & offline';
+    if (rowInstall) rowInstall.style.cursor = 'pointer';
   }
 }
+window.updateInstallUi = updateInstallUi;
 
 function initProfileAndChangelog() {
-  // Listen for PWA beforeinstallprompt
+  // Listen for PWA beforeinstallprompt if fired later
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
+    window.deferredInstallPrompt = e;
     deferredInstallPrompt = e;
     updateInstallUi();
   });
 
   window.addEventListener('appinstalled', () => {
+    window.deferredInstallPrompt = null;
     deferredInstallPrompt = null;
     updateInstallUi();
     showToast('DompetQu berhasil terpasang di perangkat Anda!', 'success');
@@ -1835,21 +1841,43 @@ function initProfileAndChangelog() {
     });
   });
 
-  // Install app button
-  const btnInstall = document.getElementById('btn-install-app');
-  if (btnInstall) {
-    btnInstall.addEventListener('click', async () => {
-      if (deferredInstallPrompt) {
-        deferredInstallPrompt.prompt();
-        const { outcome } = await deferredInstallPrompt.userChoice;
-        if (outcome === 'accepted') {
-          showToast('Memulai instalasi DompetQu...', 'info');
+  // Install App Action (both button and card click)
+  async function triggerInstallFlow(e) {
+    if (e) e.stopPropagation();
+    const promptEvt = window.deferredInstallPrompt || deferredInstallPrompt;
+    if (promptEvt) {
+      try {
+        promptEvt.prompt();
+        const choice = await promptEvt.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          showToast('Menginstal DompetQu...', 'info');
         }
+        window.deferredInstallPrompt = null;
         deferredInstallPrompt = null;
         updateInstallUi();
-      } else {
-        showToast('Untuk install aplikasi: Buka menu browser (titik 3 atau Share), lalu pilih "Tambahkan ke Layar Utama" / "Install App".', 'info');
+      } catch (err) {
+        console.warn('Install prompt error:', err);
       }
+    } else {
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                           window.navigator.standalone === true;
+      if (isStandalone) {
+        showToast('DompetQu sudah terpasang di perangkat Anda!', 'success');
+      } else {
+        showToast('Buka menu browser (titik 3 di kanan atas), lalu klik "Tambahkan ke Layar Utama" / "Install Aplikasi".', 'info', 4500);
+      }
+    }
+  }
+
+  const btnInstall = document.getElementById('btn-install-app');
+  if (btnInstall) {
+    btnInstall.addEventListener('click', triggerInstallFlow);
+  }
+  const rowInstall = document.getElementById('profile-install-row');
+  if (rowInstall) {
+    rowInstall.addEventListener('click', (e) => {
+      if (e.target.closest('#btn-install-app')) return;
+      triggerInstallFlow(e);
     });
   }
 
@@ -1896,7 +1924,7 @@ function applyThemeUI(theme, save = false) {
   const icon = document.getElementById('theme-lucide-icon');
   const iconWrap = document.getElementById('profile-theme-icon');
   if (desc) {
-    desc.textContent = theme === 'light' ? 'Terang (Calm Light)' : 'Gelap (Calm Dark)';
+    desc.textContent = theme === 'light' ? 'Mode Terang aktif' : 'Mode Gelap aktif';
   }
   if (iconWrap && icon) {
     if (theme === 'light') {
