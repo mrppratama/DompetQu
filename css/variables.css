@@ -1,0 +1,64 @@
+/* DompetQu — Design tokens (Calm Dark Finance) */
+:root {
+  color-scheme: dark;
+
+  /* Base */
+  --bg: #111315;
+  --bg-2: #181B1F;
+  --surface: #1D2125;
+  --surface-2: #24292E;
+  --surface-3: #2B3137;
+  --border: #30363D;
+  --border-soft: #262B31;
+
+  /* Brand */
+  --primary: #5FBF8F;
+  --primary-hover: #6DCA9C;
+  --primary-dark: #3D8F68;
+  --primary-soft: #20382D;
+  --on-primary: #0E1A14;
+
+  /* Text */
+  --text: #E6E8EB;
+  --text-2: #A0A6AD;
+  --text-3: #737A83;
+
+  /* Status */
+  --success: #5FBF8F;
+  --warning: #D6A85F;
+  --critical: #D98F78;
+  --danger: #D97878;
+  --info: #6E9FD6;
+  --warning-soft: #332B1F;
+  --critical-soft: #33272A;
+  --danger-soft: #3A2427;
+  --info-soft: #1E2A38;
+
+  /* Typography */
+  --font: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-base: 0.9375rem;
+  --fs-md: 1rem;
+  --fs-lg: 1.125rem;
+  --fs-xl: 1.375rem;
+  --fs-2xl: 1.75rem;
+  --fs-hero: 2.25rem;
+
+  /* Shape */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 16px;
+  --radius-full: 999px;
+
+  /* Layout */
+  --header-h: 56px;
+  --bottomnav-h: 64px;
+  --sidebar-w: 240px;
+  --content-max: 1120px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur: 160ms;
+}

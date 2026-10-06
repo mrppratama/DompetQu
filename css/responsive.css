@@ -1,0 +1,117 @@
+/* DompetQu — Responsive Styles (Mobile-first to Desktop) */
+
+/* Mobile landscape & Small Tablet (min-width: 640px) */
+@media (min-width: 640px) {
+  .pundi-grid,
+  .goal-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .field-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-row {
+    grid-auto-flow: dense;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .summary-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .summary-item-wide {
+    grid-column: span 3;
+  }
+}
+
+/* Tablet & Desktop Layout (min-width: 860px) */
+@media (min-width: 860px) {
+  .app-shell {
+    display: flex;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: var(--sidebar-w);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 20px 16px;
+    background: var(--bg-2);
+    border-right: 1px solid var(--border-soft);
+    flex-shrink: 0;
+    z-index: 25;
+  }
+
+  .topbar {
+    display: none; /* Desktop uses sidebar navigation */
+  }
+
+  .bottom-nav {
+    display: none; /* Desktop uses sidebar navigation */
+  }
+
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 28px 36px 48px;
+  }
+
+  .view {
+    padding: 0;
+    margin: 0;
+    max-width: 1000px;
+  }
+
+  .dash-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+
+  .dash-grid > .section-span-2 {
+    grid-column: span 2;
+  }
+
+  .chart-box {
+    grid-template-columns: 240px 1fr;
+    align-items: center;
+  }
+
+  dialog.modal {
+    margin: auto;
+    max-width: 520px;
+  }
+
+  .modal-panel {
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border);
+    max-height: 85vh;
+    animation: modal-in 0.2s var(--ease);
+  }
+
+  .toast-root {
+    left: auto;
+    right: 24px;
+    bottom: 24px;
+    transform: none;
+  }
+}
+
+/* Wide Desktop Screens (min-width: 1200px) */
+@media (min-width: 1200px) {
+  .sidebar {
+    width: 260px;
+  }
+
+  .main {
+    padding: 36px 48px 64px;
+  }
+
+  .pundi-grid,
+  .goal-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
