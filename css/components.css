@@ -1672,3 +1672,40 @@ button.setting-row:hover {
   color: var(--text);
 }
 
+/* ---------- Floating Action Button (Mobile) ---------- */
+.floating-fab {
+  position: fixed;
+  right: 18px;
+  bottom: calc(var(--bottomnav-h) + 16px + env(safe-area-inset-bottom));
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 0;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 28;
+  transition: all var(--dur) var(--ease);
+}
+
+.floating-fab:hover {
+  transform: scale(1.06);
+  background: var(--primary-hover);
+  box-shadow: 0 10px 28px rgba(16, 185, 129, 0.5);
+}
+
+.floating-fab:active {
+  transform: scale(0.94);
+}
+
+@media (min-width: 992px) {
+  .floating-fab {
+    display: none !important;
+  }
+}
+
+

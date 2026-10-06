@@ -46,21 +46,17 @@
           <i data-lucide="wallet-cards" class="icon" style="width:18px;height:18px;"></i>
           <span>Pundi-Pundi</span>
         </a>
-        <a href="#transactions" class="nav-link" data-view="transactions">
-          <i data-lucide="arrow-left-right" class="icon" style="width:18px;height:18px;"></i>
-          <span>Transaksi</span>
-        </a>
         <a href="#goals" class="nav-link" data-view="goals">
           <i data-lucide="target" class="icon" style="width:18px;height:18px;"></i>
           <span>Target Keuangan</span>
         </a>
+        <a href="#transactions" class="nav-link" data-view="transactions">
+          <i data-lucide="arrow-left-right" class="icon" style="width:18px;height:18px;"></i>
+          <span>Transaksi</span>
+        </a>
         <a href="#reports" class="nav-link" data-view="reports">
           <i data-lucide="chart-no-axes-combined" class="icon" style="width:18px;height:18px;"></i>
           <span>Laporan</span>
-        </a>
-        <a href="#settings" class="nav-link" data-view="settings">
-          <i data-lucide="settings" class="icon" style="width:18px;height:18px;"></i>
-          <span>Pengaturan</span>
         </a>
       </nav>
 
@@ -71,14 +67,15 @@
         </button>
       </div>
 
-      <div class="sidebar-user">
-        <div class="avatar avatar-sm avatar-round">
-          <i data-lucide="user" style="width:16px;height:16px;"></i>
+      <div class="sidebar-user" id="btn-sidebar-profile" style="cursor: pointer;" title="Buka Profil & Pengaturan">
+        <div class="avatar avatar-sm avatar-round" id="sidebar-avatar-initial" style="background: rgba(16, 185, 129, 0.15); color: var(--primary); font-weight: 700;">
+          P
         </div>
         <div class="sidebar-user-info">
           <span class="sidebar-user-name user-display-name">Pengguna</span>
           <span class="sidebar-user-email user-display-email">user@email.com</span>
         </div>
+        <i data-lucide="settings" class="icon" style="width:16px;height:16px;color:var(--text-3);margin-left:auto;"></i>
       </div>
     </aside>
 
@@ -352,10 +349,15 @@
       <!-- VIEW 6: PENGATURAN                         -->
       <!-- ========================================== -->
       <section id="view-settings" class="view" hidden>
-        <div class="page-head">
-          <div>
-            <span class="eyebrow">Preferensi Aplikasi</span>
-            <h2 class="amount-lg">Pengaturan</h2>
+        <div class="page-head" style="margin-bottom: 20px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button type="button" class="icon-btn btn-back-settings" aria-label="Kembali ke Dashboard">
+              <i data-lucide="arrow-left" class="icon" style="width:18px;height:18px;"></i>
+            </button>
+            <div>
+              <span class="eyebrow">Preferensi Aplikasi</span>
+              <h2 class="amount-lg">Pengaturan</h2>
+            </div>
           </div>
         </div>
 
@@ -502,9 +504,10 @@
         <i data-lucide="wallet-cards" class="icon" style="width:20px;height:20px;"></i>
         <span>Pundi</span>
       </a>
-      <button type="button" class="bnav-fab btn-open-tx-modal" aria-label="Tambah Transaksi Baru">
-        <i data-lucide="plus" style="width:24px;height:24px;"></i>
-      </button>
+      <a href="#goals" class="bnav-link" data-view="goals">
+        <i data-lucide="target" class="icon" style="width:20px;height:20px;"></i>
+        <span>Target</span>
+      </a>
       <a href="#transactions" class="bnav-link" data-view="transactions">
         <i data-lucide="arrow-left-right" class="icon" style="width:20px;height:20px;"></i>
         <span>Transaksi</span>
@@ -514,6 +517,11 @@
         <span>Laporan</span>
       </a>
     </nav>
+
+    <!-- Floating Action Button for Adding Transactions on Mobile -->
+    <button type="button" class="floating-fab btn-open-tx-modal" aria-label="Tambah Transaksi Baru">
+      <i data-lucide="plus" style="width:24px;height:24px;"></i>
+    </button>
   </div>
 
   <!-- ============================================================== -->

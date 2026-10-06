@@ -1684,8 +1684,10 @@ function updateProfileAvatar(name = '') {
 
   const topbarInitial = document.getElementById('topbar-avatar-initial');
   const modalAvatar = document.getElementById('profile-modal-avatar');
+  const sidebarInitial = document.getElementById('sidebar-avatar-initial');
   if (topbarInitial) topbarInitial.textContent = initial;
   if (modalAvatar) modalAvatar.textContent = initial;
+  if (sidebarInitial) sidebarInitial.textContent = initial;
 }
 
 function updateInstallUi() {
@@ -1732,6 +1734,23 @@ function initProfileAndChangelog() {
       openModal(dom.modalProfile || document.getElementById('modal-profile'));
     });
   }
+
+  // Desktop sidebar user card opens profile modal
+  const btnSidebarProfile = document.getElementById('btn-sidebar-profile');
+  if (btnSidebarProfile) {
+    btnSidebarProfile.addEventListener('click', () => {
+      updateProfileAvatar();
+      updateInstallUi();
+      openModal(dom.modalProfile || document.getElementById('modal-profile'));
+    });
+  }
+
+  // Back button in Settings view
+  document.querySelectorAll('.btn-back-settings').forEach(btn => {
+    btn.addEventListener('click', () => {
+      navigateTo('dashboard');
+    });
+  });
 
   // Categories shortcut in Profile modal
   const btnProfileCategories = document.getElementById('profile-btn-categories');
