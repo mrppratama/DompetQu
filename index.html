@@ -29,6 +29,15 @@
       } catch (e) {}
     })();
 
+    // Register Service Worker early for instant PWA qualification
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js').then(function(reg) {
+        console.log('[DompetQu] Early SW registered:', reg.scope);
+      }).catch(function(err) {
+        console.warn('[DompetQu] Early SW registration failed:', err);
+      });
+    }
+
     // Intercept PWA beforeinstallprompt early
     window.deferredInstallPrompt = null;
     window.addEventListener('beforeinstallprompt', function(e) {
@@ -993,6 +1002,53 @@
         <button type="button" class="btn btn-ghost-danger btn-block" id="profile-btn-logout" style="height: 40px;">
           <i data-lucide="log-out" class="icon" style="width: 16px; height: 16px;"></i>
           <span>Keluar dari Akun</span>
+        </button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: INSTALL APP GUIDE                                       -->
+  <!-- ============================================================== -->
+  <dialog id="modal-install-guide" class="modal">
+    <div class="modal-panel" style="max-width: 440px;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="width: 36px; height: 36px; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.15); color: var(--primary); display: grid; place-items: center;">
+            <i data-lucide="download" class="icon" style="width: 20px; height: 20px;"></i>
+          </div>
+          <div>
+            <h3 class="modal-title">Pasang DompetQu</h3>
+            <p class="subtle small" style="margin-top: 2px;">Akses instan di layar utama HP</p>
+          </div>
+        </div>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body" style="padding-top: 8px;">
+        <div style="background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 16px; margin-bottom: 16px;">
+          <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text);">Cara Pasang di HP (Android / iOS):</h4>
+          <ol style="margin: 0; padding-left: 20px; font-size: 13px; line-height: 1.6; color: var(--text-2);">
+            <li style="margin-bottom: 8px;">
+              Ketuk menu browser: <strong>Titik Tiga (⋮)</strong> di kanan atas Chrome atau tombol <strong>Share / Bagikan (⎋)</strong> di Safari.
+            </li>
+            <li style="margin-bottom: 8px;">
+              Pilih menu <strong style="color: var(--primary);">"Install aplikasi"</strong> atau <strong style="color: var(--primary);">"Tambahkan ke Layar Utama"</strong>.
+            </li>
+            <li>
+              Ketuk <strong>"Install"</strong> / <strong>"Tambah"</strong>. Aplikasi langsung muncul di layar utama HP Anda seperti aplikasi Play Store.
+            </li>
+          </ol>
+        </div>
+
+        <p class="subtle small" style="line-height: 1.5; margin-bottom: 16px;">
+          💡 <em>Tip: Jika aplikasi sudah pernah diinstall sebelumnya, Anda dapat langsung membukanya melalui daftar aplikasi atau layar utama HP Anda.</em>
+        </p>
+
+        <button type="button" class="btn btn-primary btn-block" data-close-modal>
+          <span>Saya Mengerti</span>
         </button>
       </div>
     </div>

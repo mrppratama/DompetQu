@@ -1844,13 +1844,34 @@ function initProfileAndChangelog() {
   // Install App Action (both button and card click)
   async function triggerInstallFlow(e) {
     if (e) e.stopPropagation();
+    
+    // 1. If already standalone PWA mode
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                         window.navigator.standalone === true;
+    if (isStandalone) {
+      showToast('Aplikasi DompetQu sudah terpasang dan sedang dibuka!', 'success');
+      return;
+    }
+
+    // 2. If browser exposes getInstalledRelatedApps, check if already installed
+    if ('getInstalledRelatedApps' in navigator) {
+      try {
+        const related = await navigator.getInstalledRelatedApps();
+        if (related && related.length > 0) {
+          showToast('DompetQu sudah terpasang di HP Anda! Anda dapat langsung membukanya dari layar utama.', 'info', 5000);
+          return;
+        }
+      } catch (err) {}
+    }
+
+    // 3. If deferred prompt is captured, trigger native install prompt dialog
     const promptEvt = window.deferredInstallPrompt || deferredInstallPrompt;
     if (promptEvt) {
       try {
         promptEvt.prompt();
         const choice = await promptEvt.userChoice;
         if (choice && choice.outcome === 'accepted') {
-          showToast('Menginstal DompetQu...', 'info');
+          showToast('Menginstal DompetQu ke perangkat...', 'info');
         }
         window.deferredInstallPrompt = null;
         deferredInstallPrompt = null;
@@ -1858,14 +1879,16 @@ function initProfileAndChangelog() {
       } catch (err) {
         console.warn('Install prompt error:', err);
       }
+      return;
+    }
+
+    // 4. If prompt is not available, open visual guide modal
+    closeModal(dom.modalProfile || document.getElementById('modal-profile'));
+    const guideModal = document.getElementById('modal-install-guide');
+    if (guideModal) {
+      openModal(guideModal);
     } else {
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                           window.navigator.standalone === true;
-      if (isStandalone) {
-        showToast('DompetQu sudah terpasang di perangkat Anda!', 'success');
-      } else {
-        showToast('Buka menu browser (titik 3 di kanan atas), lalu klik "Tambahkan ke Layar Utama" / "Install Aplikasi".', 'info', 4500);
-      }
+      showToast('Buka menu browser (titik 3 di kanan atas Chrome), lalu pilih "Install aplikasi".', 'info', 4500);
     }
   }
 
@@ -1957,7 +1980,7 @@ function applyThemeUI(theme, save = false) {
 
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    const doRegister = () => {
       navigator.serviceWorker.register('./sw.js')
         .then(reg => {
           console.log('[DompetQu] Service Worker registered with scope:', reg.scope);
@@ -1965,7 +1988,12 @@ function registerServiceWorker() {
         .catch(err => {
           console.warn('[DompetQu] Service Worker registration failed:', err);
         });
-    });
+    };
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+      doRegister();
+    } else {
+      window.addEventListener('load', doRegister);
+    }
   }
 }
 
