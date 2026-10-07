@@ -3,7 +3,7 @@
  * Central aggregation: Total balance, monthly stats, pundi envelopes, budget warnings, & charts.
  */
 
-import { Currency, DateUtil, BudgetUtil, escapeHtml, refreshIcons } from './utils.js';
+import { Currency, DateUtil, BudgetUtil, escapeHtml, refreshIcons, resolvePundiIcon } from './utils.js';
 import { PundiService } from './pundi.js';
 import { TransactionService } from './transaction.js';
 import { CategoryService } from './category.js';
@@ -20,13 +20,18 @@ export const DashboardManager = {
     const startStr = start.toISOString().split('T')[0];
     const endStr = end.toISOString().split('T')[0];
 
-    // 2. Fetch Pundis, Categories, and Transactions (efficient single-fetch)
-    const [pundis, categories, monthTransactions, allRecentTransactions] = await Promise.all([
+    // 2. Fetch Pundis, Categories, and All Transactions in parallel (single query)
+    const [pundis, categories, allRecentTransactions] = await Promise.all([
       PundiService.getPundis(userId, false), // active pundis only
       CategoryService.getCategories(userId),
-      TransactionService.getTransactions(userId, { startDate: startStr, endDate: endStr }),
-      TransactionService.getTransactions(userId) // all recent for transaction list
+      TransactionService.getTransactions(userId)
     ]);
+
+    // Fast in-memory filter for month transactions to eliminate duplicate network queries
+    const monthTransactions = allRecentTransactions.filter(t => {
+      const d = t.date;
+      return d && d >= startStr && d <= endStr;
+    });
 
     const settings = SettingsService.getSettings();
     const activeWidgets = settings.widgets || {};
@@ -86,7 +91,7 @@ export const DashboardManager = {
     if (elements.widgetExpense) elements.widgetExpense.hidden = !activeWidgets.expense;
     if (elements.widgetNet) elements.widgetNet.hidden = true;
 
-    // --- Hide standalone warnings container (moved inside cards per user request) ---
+    // --- Hide standalone warnings container ---
     if (elements.warningsContainer) {
       elements.warningsContainer.innerHTML = '';
       if (elements.warningsContainer.closest('.section')) {
@@ -94,7 +99,7 @@ export const DashboardManager = {
       }
     }
 
-    // --- Render Pundi-Pundi Mini Cards ---
+    // --- Render Pundi-Pundi Mini Cards (Pure Envelope concept: No budget, no progress bar) ---
     if (elements.pundiListContainer && activeWidgets.pundiList) {
       elements.pundiListContainer.closest('.section').hidden = false;
       if (pundis.length === 0) {
@@ -102,55 +107,26 @@ export const DashboardManager = {
           <div class="card empty">
             <div class="empty-icon"><i data-lucide="wallet" style="width:24px;height:24px;"></i></div>
             <p class="empty-title">Belum ada Pundi</p>
-            <p class="empty-text">Buat Pundi untuk membagi uang Anda dengan metode envelope budgeting.</p>
+            <p class="empty-text">Buat Pundi untuk membagi uang Anda ke pos-pos kebutuhan.</p>
             <button type="button" class="btn btn-secondary btn-sm" id="btn-create-first-pundi">Buat Pundi</button>
           </div>
         `;
       } else {
         elements.pundiListContainer.innerHTML = pundis.map(p => {
-          const expense = expenseByPundiMap[p.id] || 0;
-          const budget = Number(p.monthlyBudget || 0);
-          const usage = BudgetUtil.calculateUsage(expense, budget);
-          const status = BudgetUtil.getStatus(usage);
-
-          let alertHtml = '';
-          if (usage >= 100) {
-            alertHtml = `
-              <div class="pundi-alert-badge alert-danger">
-                <i data-lucide="alert-triangle" style="width:12px;height:12px;flex-shrink:0;"></i>
-                <span>Over budget (${usage}%)</span>
-              </div>
-            `;
-          } else if (usage >= 90) {
-            alertHtml = `
-              <div class="pundi-alert-badge alert-danger">
-                <i data-lucide="alert-triangle" style="width:12px;height:12px;flex-shrink:0;"></i>
-                <span>Budget hampir habis (${usage}%)</span>
-              </div>
-            `;
-          } else if (usage >= 75) {
-            alertHtml = `
-              <div class="pundi-alert-badge alert-warning">
-                <i data-lucide="alert-triangle" style="width:12px;height:12px;flex-shrink:0;"></i>
-                <span>Budget terpakai ${usage}%</span>
-              </div>
-            `;
-          }
-
           return `
-            <div class="card pundi-row" data-pundi-id="${p.id}" data-view="pundi" style="cursor: pointer;">
-              <div class="avatar avatar-sm" style="background:${p.color || '#10B981'}20; color:${p.color || '#10B981'};">
-                <i data-lucide="${escapeHtml(p.icon || 'wallet')}" style="width:18px;height:18px;"></i>
+            <div class="card pundi-row" data-pundi-id="${p.id}" data-view="pundi" style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px;">
+              <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+                <div class="avatar avatar-sm" style="background:${p.color || '#10B981'}20; color:${p.color || '#10B981'}; flex-shrink: 0;">
+                  <i data-lucide="${escapeHtml(resolvePundiIcon(p.icon))}" style="width:18px;height:18px;"></i>
+                </div>
+                <div class="pundi-main" style="min-width:0;">
+                  <div class="pundi-row-name" style="font-weight: 600; font-size: 14px;">${escapeHtml(p.name)}</div>
+                  <div class="pundi-row-sub" style="font-size: 12px; color: var(--text-2);">${escapeHtml(p.description || 'Alokasi Pundi')}</div>
+                </div>
               </div>
-              <div class="pundi-main" style="min-width:0;">
-                <div class="pundi-row-name">${escapeHtml(p.name)}</div>
-                <div class="pundi-row-sub">${Currency.format(p.balance || 0)} saldo &bull; ${usage}% digunakan</div>
+              <div class="pundi-row-amount" style="font-weight: 700; font-size: 14px; color: var(--text-1); flex-shrink: 0;">
+                ${Currency.format(p.balance || 0)}
               </div>
-              <div class="badge ${status.badgeClass}">${status.label}</div>
-              <div class="progress ${status.class}" style="grid-column: 1 / -1; margin-top: 6px;">
-                <span style="width: ${Math.min(100, usage)}%;"></span>
-              </div>
-              ${alertHtml}
             </div>
           `;
         }).join('');
@@ -158,6 +134,7 @@ export const DashboardManager = {
     } else if (elements.pundiListContainer) {
       elements.pundiListContainer.closest('.section').hidden = true;
     }
+
 
     // --- Render Expense Doughnut Chart & Legend ---
     if (elements.chartCanvas && activeWidgets.expenseChart) {
@@ -222,7 +199,7 @@ export const DashboardManager = {
             <ul class="list">
               ${recent.map(t => {
                 const cat = catMap[t.categoryId] || { name: 'Kategori', icon: 'tag' };
-                const pundi = pundiMap[t.pundiId] || { name: 'Pundi' };
+                const pundi = t.pundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.pundiId] || { name: 'Pundi' });
                 const signed = Currency.formatSigned(t.type, t.amount);
 
                 let iconName = cat.icon || 'arrow-left-right';

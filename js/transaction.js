@@ -82,17 +82,22 @@ export const TransactionService = {
     // Local / Offline fallback logic
     if (!isConfigured || !db) {
       const pundiList = JSON.parse(localStorage.getItem(`dompetqu_pundis_${userId}`) || '[]');
-      const sourcePundi = pundiList.find(p => p.id === pundiId);
-      if (!sourcePundi) throw new Error('Pundi sumber tidak ditemukan.');
+      const isSpecificPundi = pundiId && pundiId !== 'MAIN_WALLET';
+      const sourcePundi = isSpecificPundi ? pundiList.find(p => p.id === pundiId) : null;
 
-      if (type === 'EXPENSE') {
+      if (isSpecificPundi && !sourcePundi) {
+        throw new Error('Pundi sumber tidak ditemukan.');
+      }
+
+      if (type === 'EXPENSE' && sourcePundi) {
         if ((sourcePundi.balance || 0) < numAmount) {
           throw new Error('Saldo Pundi tidak mencukupi.');
         }
         sourcePundi.balance = (sourcePundi.balance || 0) - numAmount;
-      } else if (type === 'INCOME') {
+      } else if (type === 'INCOME' && sourcePundi) {
         sourcePundi.balance = (sourcePundi.balance || 0) + numAmount;
       } else if (type === 'TRANSFER') {
+        if (!sourcePundi) throw new Error('Pundi sumber transfer wajib dipilih.');
         if (!destinationPundiId || destinationPundiId === pundiId) {
           throw new Error('Pundi tujuan transfer tidak valid.');
         }
@@ -105,7 +110,9 @@ export const TransactionService = {
         destPundi.balance = (destPundi.balance || 0) + numAmount;
       }
 
-      localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(pundiList));
+      if (sourcePundi) {
+        localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(pundiList));
+      }
 
       const txList = JSON.parse(localStorage.getItem(`dompetqu_transactions_${userId}`) || '[]');
       const newTx = {
@@ -113,7 +120,7 @@ export const TransactionService = {
         type,
         amount: numAmount,
         categoryId: categoryId || null,
-        pundiId,
+        pundiId: pundiId || 'MAIN_WALLET',
         destinationPundiId: destinationPundiId || null,
         date,
         note: (note || '').trim(),
@@ -128,18 +135,37 @@ export const TransactionService = {
     // Firestore Transaction execution
     const txColRef = collection(db, 'users', userId, 'transactions');
     const newTxDocRef = doc(txColRef);
-    const sourcePundiRef = doc(db, 'users', userId, 'pundi', pundiId);
-    const destPundiRef = destinationPundiId ? doc(db, 'users', userId, 'pundi', destinationPundiId) : null;
+    const isSpecificPundi = pundiId && pundiId !== 'MAIN_WALLET';
+    const sourcePundiRef = isSpecificPundi ? doc(db, 'users', userId, 'pundi', pundiId) : null;
+    const destPundiRef = (destinationPundiId && destinationPundiId !== 'MAIN_WALLET') ? doc(db, 'users', userId, 'pundi', destinationPundiId) : null;
 
     await runTransaction(db, async (t) => {
-      const sourceSnap = await t.get(sourcePundiRef);
-      if (!sourceSnap.exists()) {
-        throw new Error('Pundi sumber tidak ditemukan.');
-      }
-      const sourceData = sourceSnap.data();
-      const currentSourceBalance = Number(sourceData.balance || 0);
+      let sourceData = null;
+      let currentSourceBalance = 0;
 
-      if (type === 'EXPENSE') {
+      if (sourcePundiRef) {
+        const sourceSnap = await t.get(sourcePundiRef);
+        if (!sourceSnap.exists()) {
+          throw new Error('Pundi sumber tidak ditemukan.');
+        }
+        sourceData = sourceSnap.data();
+        currentSourceBalance = Number(sourceData.balance || 0);
+      }
+
+      let destSnap = null;
+      let currentDestBalance = 0;
+      if (type === 'TRANSFER') {
+        if (!destPundiRef || pundiId === destinationPundiId) {
+          throw new Error('Pundi tujuan transfer tidak valid.');
+        }
+        destSnap = await t.get(destPundiRef);
+        if (!destSnap.exists()) {
+          throw new Error('Pundi tujuan tidak ditemukan.');
+        }
+        currentDestBalance = Number(destSnap.data().balance || 0);
+      }
+
+      if (type === 'EXPENSE' && sourcePundiRef) {
         if (currentSourceBalance < numAmount) {
           throw new Error('Saldo Pundi tidak mencukupi.');
         }
@@ -147,41 +173,35 @@ export const TransactionService = {
           balance: currentSourceBalance - numAmount,
           updatedAt: serverTimestamp()
         });
-      } else if (type === 'INCOME') {
+      } else if (type === 'INCOME' && sourcePundiRef) {
         t.update(sourcePundiRef, {
           balance: currentSourceBalance + numAmount,
           updatedAt: serverTimestamp()
         });
       } else if (type === 'TRANSFER') {
-        if (!destPundiRef || pundiId === destinationPundiId) {
-          throw new Error('Pundi tujuan transfer tidak valid.');
-        }
-        const destSnap = await t.get(destPundiRef);
-        if (!destSnap.exists()) {
-          throw new Error('Pundi tujuan tidak ditemukan.');
-        }
-        const destData = destSnap.data();
-        const currentDestBalance = Number(destData.balance || 0);
-
         if (currentSourceBalance < numAmount) {
           throw new Error('Saldo Pundi tidak mencukupi untuk transfer.');
         }
 
-        t.update(sourcePundiRef, {
-          balance: currentSourceBalance - numAmount,
-          updatedAt: serverTimestamp()
-        });
-        t.update(destPundiRef, {
-          balance: currentDestBalance + numAmount,
-          updatedAt: serverTimestamp()
-        });
+        if (sourcePundiRef) {
+          t.update(sourcePundiRef, {
+            balance: currentSourceBalance - numAmount,
+            updatedAt: serverTimestamp()
+          });
+        }
+        if (destPundiRef) {
+          t.update(destPundiRef, {
+            balance: currentDestBalance + numAmount,
+            updatedAt: serverTimestamp()
+          });
+        }
       }
 
       t.set(newTxDocRef, {
         type,
         amount: numAmount,
         categoryId: categoryId || null,
-        pundiId,
+        pundiId: pundiId || 'MAIN_WALLET',
         destinationPundiId: destinationPundiId || null,
         date,
         note: (note || '').trim(),
@@ -190,7 +210,7 @@ export const TransactionService = {
       });
     });
 
-    return { id: newTxDocRef.id, type, amount: numAmount, pundiId, destinationPundiId, categoryId, date, note };
+    return { id: newTxDocRef.id, type, amount: numAmount, pundiId: pundiId || 'MAIN_WALLET', destinationPundiId, categoryId, date, note };
   },
 
   /**
@@ -206,7 +226,8 @@ export const TransactionService = {
       const tx = txList[txIdx];
 
       const pundiList = JSON.parse(localStorage.getItem(`dompetqu_pundis_${userId}`) || '[]');
-      const sourcePundi = pundiList.find(p => p.id === tx.pundiId);
+      const isSpecificPundi = tx.pundiId && tx.pundiId !== 'MAIN_WALLET';
+      const sourcePundi = isSpecificPundi ? pundiList.find(p => p.id === tx.pundiId) : null;
 
       if (tx.type === 'EXPENSE' && sourcePundi) {
         sourcePundi.balance = (sourcePundi.balance || 0) + tx.amount;
@@ -219,7 +240,9 @@ export const TransactionService = {
       }
 
       txList.splice(txIdx, 1);
-      localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(pundiList));
+      if (sourcePundi) {
+        localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(pundiList));
+      }
       localStorage.setItem(`dompetqu_transactions_${userId}`, JSON.stringify(txList));
       return;
     }
@@ -234,14 +257,14 @@ export const TransactionService = {
       // ALL READS MUST PRECEDE ALL WRITES in Firestore transactions
       let sourceRef = null;
       let sourceSnap = null;
-      if (tx.pundiId) {
+      if (tx.pundiId && tx.pundiId !== 'MAIN_WALLET') {
         sourceRef = doc(db, 'users', userId, 'pundi', tx.pundiId);
         sourceSnap = await t.get(sourceRef);
       }
 
       let destRef = null;
       let destSnap = null;
-      if (tx.type === 'TRANSFER' && tx.destinationPundiId) {
+      if (tx.type === 'TRANSFER' && tx.destinationPundiId && tx.destinationPundiId !== 'MAIN_WALLET') {
         destRef = doc(db, 'users', userId, 'pundi', tx.destinationPundiId);
         destSnap = await t.get(destRef);
       }
@@ -265,6 +288,7 @@ export const TransactionService = {
 
       t.delete(txDocRef);
     });
+
   },
 
   /**

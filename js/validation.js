@@ -62,7 +62,7 @@ export const Validator = {
       errors.push('Tanggal transaksi wajib diisi.');
     }
 
-    if (!pundiId) {
+    if (!pundiId && type !== 'INCOME') {
       errors.push('Pundi wajib dipilih.');
     }
 
@@ -70,8 +70,8 @@ export const Validator = {
       if (!categoryId) {
         errors.push('Kategori pengeluaran wajib dipilih.');
       }
-      // Check balance non-negative rule
-      if (typeof sourcePundiBalance === 'number' && numAmount > sourcePundiBalance) {
+      // Check balance non-negative rule if source is a specific Pundi
+      if (pundiId && pundiId !== 'MAIN_WALLET' && typeof sourcePundiBalance === 'number' && numAmount > sourcePundiBalance) {
         errors.push('Saldo Pundi tidak mencukupi.');
       }
     }
@@ -95,14 +95,10 @@ export const Validator = {
     };
   },
 
-  validatePundi({ name, monthlyBudget }) {
+  validatePundi({ name }) {
     const errors = [];
     if (!name || !name.trim()) {
       errors.push('Nama Pundi wajib diisi.');
-    }
-    const numBudget = Number(monthlyBudget);
-    if (isNaN(numBudget) || numBudget < 0) {
-      errors.push('Anggaran bulanan tidak valid.');
     }
     return {
       isValid: errors.length === 0,

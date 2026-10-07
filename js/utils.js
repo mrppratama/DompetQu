@@ -122,8 +122,8 @@ export const Currency = {
   attachAll(root = document) {
     const selectors = [
       '#tx-amount',
-      '#pundi-budget',
-      '#pundi-balance',
+      '#return-pundi-amount',
+      '#allocate-pundi-amount',
       '#goal-target',
       '#goal-current',
       '#saving-amount',
@@ -264,4 +264,32 @@ export function refreshIcons() {
  */
 export function generateId(prefix = 'id') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+}
+
+/**
+ * Standard list of persistent Lucide icons for Pundi-Pundi
+ */
+export const AVAILABLE_PUNDI_ICONS = [
+  { id: 'wallet', label: 'Dompet' },
+  { id: 'piggy-bank', label: 'Tabungan' },
+  { id: 'shopping-bag', label: 'Belanja' },
+  { id: 'coffee', label: 'Makan & Kafe' },
+  { id: 'home', label: 'Rumah & Tempat Tinggal' },
+  { id: 'car', label: 'Transportasi' },
+  { id: 'heart-pulse', label: 'Kesehatan' },
+  { id: 'gift', label: 'Hadiah' },
+  { id: 'graduation-cap', label: 'Pendidikan' },
+  { id: 'zap', label: 'Tagihan & Listrik' },
+  { id: 'shield', label: 'Darurat' },
+  { id: 'smile', label: 'Hiburan' }
+];
+
+/**
+ * Safely resolve a Pundi icon ID with guaranteed fallback
+ */
+export function resolvePundiIcon(iconName) {
+  if (!iconName || typeof iconName !== 'string') return 'wallet';
+  const clean = iconName.trim().toLowerCase();
+  const exists = AVAILABLE_PUNDI_ICONS.some(item => item.id === clean);
+  return exists ? clean : 'wallet';
 }

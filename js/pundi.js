@@ -12,9 +12,12 @@ import {
   setDoc,
   addDoc,
   updateDoc,
+  deleteDoc,
+  runTransaction,
   serverTimestamp,
   isConfigured
 } from './firebase-config.js';
+import { resolvePundiIcon } from './utils.js';
 
 export const PundiService = {
   /**
@@ -74,24 +77,17 @@ export const PundiService = {
   },
 
   /**
-   * Create new Pundi
+   * Create new Pundi (Starts at Rp0; name, icon, optional description)
    */
-  async createPundi(userId, { name, description = '', monthlyBudget = 0, initialBalance = 0, color = '#10B981', icon = 'wallet' }) {
+  async createPundi(userId, { name, description = '', color = '#10B981', icon = 'wallet' }) {
     if (!userId) throw new Error('User belum login');
-
-    const budgetInt = Math.max(0, parseInt(monthlyBudget, 10) || 0);
-    const balanceInt = Math.max(0, parseInt(initialBalance, 10) || 0);
 
     const payload = {
       name: name.trim(),
       description: (description || '').trim(),
-      monthlyBudget: budgetInt,
-      balance: balanceInt,
+      balance: 0,
       color: color || '#10B981',
-      icon: icon || 'wallet',
-      warning75: true,
-      warning90: true,
-      warning100: true,
+      icon: resolvePundiIcon(icon),
       isArchived: false
     };
 
@@ -125,11 +121,11 @@ export const PundiService = {
     if (!userId || !pundiId) return;
 
     const updates = { ...data };
-    if ('monthlyBudget' in updates) {
-      updates.monthlyBudget = Math.max(0, parseInt(updates.monthlyBudget, 10) || 0);
-    }
     if ('balance' in updates) {
       updates.balance = Math.max(0, parseInt(updates.balance, 10) || 0);
+    }
+    if ('icon' in updates) {
+      updates.icon = resolvePundiIcon(updates.icon);
     }
 
     if (!isConfigured || !db) {
@@ -150,9 +146,92 @@ export const PundiService = {
   },
 
   /**
-   * Archive or unarchive Pundi (Pundis with history are archived, not deleted)
+   * Archive or unarchive Pundi
    */
   async setArchived(userId, pundiId, isArchived = true) {
     return this.updatePundi(userId, pundiId, { isArchived });
+  },
+
+  /**
+   * Delete archived Pundi permanently
+   * Note: Transactions remain the source of truth; deleting Pundi never deletes transaction records.
+   */
+  async deletePundi(userId, pundiId) {
+    if (!userId || !pundiId) return;
+
+    if (!isConfigured || !db) {
+      const list = await this.getPundis(userId, true);
+      const filtered = list.filter(p => p.id !== pundiId);
+      localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(filtered));
+      return;
+    }
+
+    const docRef = doc(db, 'users', userId, 'pundi', pundiId);
+    await deleteDoc(docRef);
+  },
+
+  /**
+   * Return balance from Pundi back to Saldo Tersedia (Internal Transfer)
+   * Decreases Pundi balance; Saldo Tersedia increases; Total Saldo remains constant.
+   */
+  async returnBalanceToAvailable(userId, pundiId, amount) {
+    if (!userId || !pundiId) throw new Error('Parameter tidak valid.');
+    const numAmount = Math.max(0, parseInt(amount, 10) || 0);
+    if (numAmount <= 0) throw new Error('Nominal harus lebih dari Rp0.');
+
+    if (!isConfigured || !db) {
+      const list = await this.getPundis(userId, true);
+      const pundi = list.find(p => p.id === pundiId);
+      if (!pundi) throw new Error('Pundi tidak ditemukan.');
+      const curBal = Number(pundi.balance || 0);
+      if (curBal < numAmount) throw new Error('Saldo Pundi tidak mencukupi.');
+      pundi.balance = curBal - numAmount;
+      pundi.updatedAt = new Date().toISOString();
+      localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(list));
+      return pundi;
+    }
+
+    const pundiRef = doc(db, 'users', userId, 'pundi', pundiId);
+    await runTransaction(db, async (t) => {
+      const snap = await t.get(pundiRef);
+      if (!snap.exists()) throw new Error('Pundi tidak ditemukan.');
+      const curBal = Number(snap.data().balance || 0);
+      if (curBal < numAmount) throw new Error('Saldo Pundi tidak mencukupi.');
+      t.update(pundiRef, {
+        balance: curBal - numAmount,
+        updatedAt: serverTimestamp()
+      });
+    });
+  },
+
+  /**
+   * Allocate balance from Saldo Tersedia into Pundi (Internal Allocation)
+   */
+  async allocateFromAvailable(userId, pundiId, amount) {
+    if (!userId || !pundiId) throw new Error('Parameter tidak valid.');
+    const numAmount = Math.max(0, parseInt(amount, 10) || 0);
+    if (numAmount <= 0) throw new Error('Nominal harus lebih dari Rp0.');
+
+    if (!isConfigured || !db) {
+      const list = await this.getPundis(userId, true);
+      const pundi = list.find(p => p.id === pundiId);
+      if (!pundi) throw new Error('Pundi tidak ditemukan.');
+      pundi.balance = Number(pundi.balance || 0) + numAmount;
+      pundi.updatedAt = new Date().toISOString();
+      localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(list));
+      return pundi;
+    }
+
+    const pundiRef = doc(db, 'users', userId, 'pundi', pundiId);
+    await runTransaction(db, async (t) => {
+      const snap = await t.get(pundiRef);
+      if (!snap.exists()) throw new Error('Pundi tidak ditemukan.');
+      const curBal = Number(snap.data().balance || 0);
+      t.update(pundiRef, {
+        balance: curBal + numAmount,
+        updatedAt: serverTimestamp()
+      });
+    });
   }
 };
+

@@ -13,7 +13,7 @@ import { DashboardManager } from './dashboard.js';
 import { SettingsService } from './settings.js';
 import { Validator } from './validation.js';
 import { showToast, initNetworkStatus, formatFriendlyError } from './notifications.js';
-import { Currency, DateUtil, BudgetUtil, debounce, escapeHtml, refreshIcons } from './utils.js';
+import { Currency, DateUtil, BudgetUtil, debounce, escapeHtml, refreshIcons, resolvePundiIcon } from './utils.js';
 
 let currentUser = null;
 let currentView = 'dashboard';
@@ -64,6 +64,10 @@ const dom = {
   formTx: document.getElementById('form-tx'),
   modalPundi: document.getElementById('modal-pundi'),
   formPundi: document.getElementById('form-pundi'),
+  modalPundiReturn: document.getElementById('modal-pundi-return'),
+  formPundiReturn: document.getElementById('form-pundi-return'),
+  modalPundiAllocate: document.getElementById('modal-pundi-allocate'),
+  formPundiAllocate: document.getElementById('form-pundi-allocate'),
   modalGoal: document.getElementById('modal-goal'),
   formGoal: document.getElementById('form-goal'),
   modalAddGoalSaving: document.getElementById('modal-goal-saving'),
@@ -410,10 +414,16 @@ function populatePundiSelects() {
 
   selects.forEach(select => {
     const currentVal = select.value;
-    select.innerHTML = '<option value="">Pilih Pundi...</option>' +
-      activePundis.map(p => `
-        <option value="${p.id}">${escapeHtml(p.name)} (${Currency.format(p.balance || 0)})</option>
-      `).join('');
+    const isTxPundi = select.id === 'tx-pundi';
+    let optionsHtml = '<option value="">Pilih Pundi...</option>';
+    if (isTxPundi) {
+      optionsHtml += '<option value="MAIN_WALLET">Saldo Tersedia (Kas Utama)</option>';
+    }
+    optionsHtml += activePundis.map(p => `
+      <option value="${p.id}">${escapeHtml(p.name)} (${Currency.format(p.balance || 0)})</option>
+    `).join('');
+
+    select.innerHTML = optionsHtml;
     if (currentVal) select.value = currentVal;
     if (select.id) CustomSelect.sync(select.id);
   });
@@ -445,25 +455,15 @@ async function loadPundiView() {
 
   cachedPundis = await PundiService.getPundis(currentUser.uid, true);
 
-  const { start, end } = DateUtil.getCurrentMonthRange();
-  const monthTx = await TransactionService.getTransactions(currentUser.uid, {
-    startDate: start.toISOString().split('T')[0],
-    endDate: end.toISOString().split('T')[0],
-    type: 'EXPENSE'
-  });
-
-  const expenseMap = {};
-  monthTx.forEach(t => {
-    expenseMap[t.pundiId] = (expenseMap[t.pundiId] || 0) + Number(t.amount || 0);
-  });
-
   const active = cachedPundis.filter(p => !p.isArchived);
   const archived = cachedPundis.filter(p => p.isArchived);
 
   // Compute Total Saldo, Total Pundi, and Saldo Tersedia for Pundi Overview
+  // Using cached transactions to eliminate duplicate network queries
   const allTx = (cachedTransactions && cachedTransactions.length > 0)
     ? cachedTransactions
     : await TransactionService.getTransactions(currentUser.uid);
+
   let allIncome = 0;
   let allExpense = 0;
   allTx.forEach(t => {
@@ -500,100 +500,80 @@ async function loadPundiView() {
     const btnEmpty = document.getElementById('btn-add-pundi-empty');
     if (btnEmpty) btnEmpty.addEventListener('click', () => openPundiModal());
   } else {
+    // Pure Envelope budgeting cards: No budget, no percentage, no progress bars
     pundiContainer.innerHTML = active.map(p => {
-      const expense = expenseMap[p.id] || 0;
-      const budget = Number(p.monthlyBudget || 0);
-      const usage = BudgetUtil.calculateUsage(expense, budget);
-      const status = BudgetUtil.getStatus(usage);
-      const remainingBudget = Math.max(0, budget - expense);
-
-      let alertHtml = '';
-      if (usage >= 100) {
-        alertHtml = `
-          <div class="pundi-alert-badge alert-danger" style="margin-top: 8px;">
-            <i data-lucide="alert-triangle" style="width:13px;height:13px;flex-shrink:0;"></i>
-            <span>Over budget (${usage}%)</span>
-          </div>
-        `;
-      } else if (usage >= 90) {
-        alertHtml = `
-          <div class="pundi-alert-badge alert-danger" style="margin-top: 8px;">
-            <i data-lucide="alert-triangle" style="width:13px;height:13px;flex-shrink:0;"></i>
-            <span>Budget hampir habis (${usage}%)</span>
-          </div>
-        `;
-      } else if (usage >= 75) {
-        alertHtml = `
-          <div class="pundi-alert-badge alert-warning" style="margin-top: 8px;">
-            <i data-lucide="alert-triangle" style="width:13px;height:13px;flex-shrink:0;"></i>
-            <span>Budget terpakai ${usage}%</span>
-          </div>
-        `;
-      }
+      const pundiIcon = resolvePundiIcon(p.icon);
+      const curBal = Number(p.balance || 0);
 
       return `
-        <div class="card pundi-card" data-pundi-id="${p.id}">
-          <div class="card-head">
-            <div class="avatar" style="background:${p.color || '#10B981'}25; color:${p.color || '#10B981'};">
-              <i data-lucide="${escapeHtml(p.icon || 'wallet')}" style="width:20px;height:20px;"></i>
+        <div class="card pundi-card" data-pundi-id="${p.id}" style="display: flex; flex-direction: column; justify-content: space-between;">
+          <div>
+            <div class="card-head" style="align-items: flex-start; margin-bottom: 12px;">
+              <div class="avatar" style="background:${p.color || '#10B981'}25; color:${p.color || '#10B981'}; flex-shrink: 0;">
+                <i data-lucide="${escapeHtml(pundiIcon)}" style="width:20px;height:20px;"></i>
+              </div>
+              <div class="card-head-title" style="flex: 1; min-width: 0; padding: 0 4px;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</h3>
+                <p style="margin: 2px 0 0; color: var(--text-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.description || 'Alokasi Pundi')}</p>
+              </div>
+              <div class="row-actions" style="flex-shrink: 0;">
+                <button type="button" class="icon-btn icon-btn-sm btn-edit-pundi" data-pundi-id="${p.id}" aria-label="Edit Pundi" title="Edit Pundi">
+                  <i data-lucide="pencil" style="width:15px;height:15px;"></i>
+                </button>
+                <button type="button" class="icon-btn icon-btn-sm btn-archive-pundi" data-pundi-id="${p.id}" aria-label="Arsipkan Pundi" title="Arsipkan Pundi">
+                  <i data-lucide="archive" style="width:15px;height:15px;"></i>
+                </button>
+              </div>
             </div>
-            <div class="card-head-title">
-              <h3>${escapeHtml(p.name)}</h3>
-              <p>${escapeHtml(p.description || 'Tidak ada catatan')}</p>
-            </div>
-            <div class="row-actions">
-              <button type="button" class="icon-btn icon-btn-sm btn-edit-pundi" data-pundi-id="${p.id}" aria-label="Edit Pundi">
-                <i data-lucide="pencil" style="width:15px;height:15px;"></i>
-              </button>
-              <button type="button" class="icon-btn icon-btn-sm btn-archive-pundi" data-pundi-id="${p.id}" aria-label="Arsipkan Pundi">
-                <i data-lucide="archive" style="width:15px;height:15px;"></i>
-              </button>
+
+            <div class="kv" style="margin-top: 14px; margin-bottom: 16px;">
+              <span class="kv-label" style="font-size: 12px; color: var(--text-2);">Saldo Saat Ini</span>
+              <span class="kv-value" style="font-size: 20px; font-weight: 800; color: var(--text-1);">${Currency.format(curBal)}</span>
             </div>
           </div>
 
-          <div class="kv">
-            <span class="kv-label">Saldo Saat Ini</span>
-            <span class="kv-value">${Currency.format(p.balance || 0)}</span>
+          <div class="pundi-card-actions" style="margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border-soft); display: flex; gap: 8px;">
+            <button type="button" class="btn btn-secondary btn-sm btn-return-pundi" data-pundi-id="${p.id}" style="flex: 1; font-size: 12px; padding: 6px 10px;" ${curBal <= 0 ? 'disabled' : ''}>
+              <i data-lucide="arrow-down-left" style="width: 13px; height: 13px;"></i>
+              <span>Kembalikan Saldo</span>
+            </button>
           </div>
-
-          <div class="progress ${status.class}">
-            <span style="width: ${Math.min(100, usage)}%;"></span>
-          </div>
-
-          <div class="meta-row">
-            <span>Budget: <strong class="num">${Currency.format(budget)}</strong></span>
-            <span>Terpakai: <strong class="num">${usage}%</strong> (${Currency.format(expense)})</span>
-          </div>
-
-          <div class="meta-row" style="margin-top:-4px;">
-            <span>Sisa Budget: <strong class="num">${Currency.format(remainingBudget)}</strong></span>
-            <span class="badge ${status.badgeClass}">${status.label}</span>
-          </div>
-          ${alertHtml}
         </div>
       `;
     }).join('');
   }
 
-  // Render archived pundis
+  // Render archived pundis with [ Pulihkan ] [ Hapus ]
   if (archivedContainer) {
     const archSection = document.getElementById('archived-pundi-section');
     if (archived.length === 0) {
       if (archSection) archSection.hidden = true;
     } else {
       if (archSection) archSection.hidden = false;
-      archivedContainer.innerHTML = archived.map(p => `
-        <div class="card pundi-row is-archived">
-          <div class="avatar avatar-sm" style="background:${p.color || '#737A83'}20; color:${p.color || '#737A83'};">
-            <i data-lucide="${escapeHtml(p.icon || 'wallet')}" style="width:16px;height:16px;"></i>
+      archivedContainer.innerHTML = archived.map(p => {
+        const pundiIcon = resolvePundiIcon(p.icon);
+        return `
+          <div class="card pundi-row is-archived" style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1;">
+              <div class="avatar avatar-sm" style="background:${p.color || '#737A83'}20; color:${p.color || '#737A83'}; flex-shrink: 0;">
+                <i data-lucide="${escapeHtml(pundiIcon)}" style="width:16px;height:16px;"></i>
+              </div>
+              <div class="pundi-main" style="min-width: 0;">
+                <div class="pundi-row-name" style="font-weight: 600; font-size: 14px;">
+                  ${escapeHtml(p.name)} <span class="badge" style="font-size: 10px; margin-left: 6px;">Diarsipkan</span>
+                </div>
+                <div class="pundi-row-sub" style="font-size: 13px; color: var(--text-2);">
+                  Saldo: <strong style="color: var(--text-1);">${Currency.format(p.balance || 0)}</strong>
+                </div>
+              </div>
+            </div>
+            <div class="row-actions" style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+              <button type="button" class="btn btn-secondary btn-sm btn-unarchive-pundi" data-pundi-id="${p.id}">Pulihkan</button>
+              <button type="button" class="btn btn-danger-soft btn-sm btn-delete-pundi" data-pundi-id="${p.id}" style="color: var(--danger); border-color: var(--danger);">Hapus</button>
+            </div>
           </div>
-          <div class="pundi-main" style="min-width:0;">
-            <div class="pundi-row-name">${escapeHtml(p.name)} <span class="badge">Diarsipkan</span></div>
-            <div class="pundi-row-sub">Saldo: ${Currency.format(p.balance || 0)}</div>
-          </div>
-          <button type="button" class="btn btn-secondary btn-sm btn-unarchive-pundi" data-pundi-id="${p.id}">Pulihkan</button>
-        </div>
-      `).join('');
+        `;
+      }).join('');
     }
   }
 
@@ -615,12 +595,12 @@ async function loadPundiView() {
       showConfirm({
         title: 'Arsipkan Pundi',
         message: `Arsipkan Pundi "${item.name}"?`,
-        subtext: 'Pundi ini tidak akan muncul saat membuat transaksi baru, tetapi riwayat transaksi tetap tersimpan.',
+        subtext: 'Pundi ini tidak akan muncul saat alokasi baru, tetapi riwayat transaksi tetap tersimpan aman.',
         actionLabel: 'Arsipkan',
         isDanger: false,
         onConfirm: async () => {
           await PundiService.setArchived(currentUser.uid, id, true);
-          showToast(`Pundi ${item.name} berhasil diarsipkan.`, 'info');
+          showToast(`Pundi "${item.name}" berhasil diarsipkan.`, 'info');
           await loadPundiView();
           await refreshBaselineData();
         }
@@ -631,12 +611,66 @@ async function loadPundiView() {
   document.querySelectorAll('.btn-unarchive-pundi').forEach(b => {
     b.addEventListener('click', async (e) => {
       const id = e.currentTarget.getAttribute('data-pundi-id');
+      const item = cachedPundis.find(p => p.id === id);
       await PundiService.setArchived(currentUser.uid, id, false);
-      showToast('Pundi berhasil dipulihkan.', 'success');
+      showToast(`Pundi "${item ? item.name : ''}" berhasil dipulihkan.`, 'success');
       await loadPundiView();
       await refreshBaselineData();
     });
   });
+
+  // Action: Delete Pundi ONLY on Archived Pundi with Rp0 Balance check
+  document.querySelectorAll('.btn-delete-pundi').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-pundi-id');
+      const item = cachedPundis.find(p => p.id === id);
+      if (!item) return;
+
+      const currentBalance = Number(item.balance || 0);
+
+      // Validation 1: Saldo Pundi > Rp0 cannot be deleted
+      if (currentBalance > 0) {
+        showConfirm({
+          title: 'Tidak Dapat Menghapus Pundi',
+          message: `Pundi masih memiliki saldo ${Currency.format(currentBalance)}.`,
+          subtext: 'Kembalikan saldo ke Saldo Tersedia sebelum menghapus Pundi.',
+          actionLabel: 'Kembalikan Saldo',
+          isDanger: false,
+          onConfirm: async () => {
+            openReturnPundiModal(item);
+          }
+        });
+        return;
+      }
+
+      // Validation 2: Saldo Pundi = Rp0 can be permanently deleted with custom confirmation modal
+      showConfirm({
+        title: 'Hapus Pundi?',
+        message: 'Apakah kamu yakin ingin menghapus Pundi ini?',
+        subtext: 'Tindakan ini tidak dapat dibatalkan. Riwayat transaksi historis tetap aman.',
+        actionLabel: 'Hapus',
+        isDanger: true,
+        onConfirm: async () => {
+          await PundiService.deletePundi(currentUser.uid, id);
+          showToast(`Pundi "${item.name}" berhasil dihapus.`, 'info');
+          await loadPundiView();
+          await refreshBaselineData();
+        }
+      });
+    });
+  });
+
+  // Action: Return Pundi balance to Saldo Tersedia
+  document.querySelectorAll('.btn-return-pundi').forEach(b => {
+    b.addEventListener('click', (e) => {
+      const id = e.currentTarget.getAttribute('data-pundi-id');
+      const item = cachedPundis.find(p => p.id === id);
+      if (item) openReturnPundiModal(item);
+    });
+  });
+
+  // Refresh Lucide icons after DOM update
+  refreshIcons();
 }
 
 function openPundiModal(pundiToEdit = null) {
@@ -647,29 +681,42 @@ function openPundiModal(pundiToEdit = null) {
   const idInput = document.getElementById('pundi-id');
   const nameInput = document.getElementById('pundi-name');
   const descInput = document.getElementById('pundi-desc');
-  const budgetInput = document.getElementById('pundi-budget');
-  const balanceInput = document.getElementById('pundi-balance');
-  const balanceField = document.getElementById('pundi-balance-field');
+
+  Validator.clearFormErrors(dom.formPundi);
 
   if (pundiToEdit) {
     if (titleEl) titleEl.textContent = 'Edit Pundi';
     idInput.value = pundiToEdit.id;
     nameInput.value = pundiToEdit.name || '';
     descInput.value = pundiToEdit.description || '';
-    budgetInput.value = Currency.formatNumber(pundiToEdit.monthlyBudget) || '0';
-    if (balanceField) balanceField.hidden = true; // balance updated via transactions
+
+    // Check matching icon
+    const safeIcon = resolvePundiIcon(pundiToEdit.icon);
+    const iconRadio = dom.formPundi.querySelector(`input[name="pundi_icon"][value="${safeIcon}"]`);
+    if (iconRadio) iconRadio.checked = true;
+
+    // Check matching color
+    const safeColor = pundiToEdit.color || '#10B981';
+    const colorRadio = dom.formPundi.querySelector(`input[name="pundi_color"][value="${safeColor}"]`);
+    if (colorRadio) colorRadio.checked = true;
   } else {
     if (titleEl) titleEl.textContent = 'Buat Pundi Baru';
     idInput.value = '';
-    budgetInput.value = '';
-    balanceInput.value = '';
-    if (balanceField) balanceField.hidden = false;
+    nameInput.value = '';
+    descInput.value = '';
+
+    const defaultIcon = dom.formPundi.querySelector('input[name="pundi_icon"][value="wallet"]');
+    if (defaultIcon) defaultIcon.checked = true;
+
+    const defaultColor = dom.formPundi.querySelector('input[name="pundi_color"][value="#10B981"]');
+    if (defaultColor) defaultColor.checked = true;
   }
 
   openModal(dom.modalPundi);
+  refreshIcons();
 }
 
-// Pundi Form submit
+// Pundi Form submit (Starts at Rp0; no budget fields)
 if (dom.formPundi) {
   dom.formPundi.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -677,18 +724,12 @@ if (dom.formPundi) {
     const id = document.getElementById('pundi-id').value;
     const name = document.getElementById('pundi-name').value;
     const desc = document.getElementById('pundi-desc').value;
-    const budget = Currency.parse(document.getElementById('pundi-budget').value);
-    const balance = Currency.parse(document.getElementById('pundi-balance').value);
-    const icon = dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'wallet';
+    const icon = resolvePundiIcon(dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'wallet');
     const color = dom.formPundi.querySelector('input[name="pundi_color"]:checked')?.value || '#10B981';
 
     Validator.clearFormErrors(dom.formPundi);
     if (!name || !name.trim()) {
       Validator.showFieldError(document.getElementById('pundi-name'), 'Nama Pundi wajib diisi.');
-      return;
-    }
-    if (!budget || isNaN(budget) || budget <= 0) {
-      Validator.showFieldError(document.getElementById('pundi-budget'), 'Anggaran bulanan wajib diisi.');
       return;
     }
 
@@ -698,7 +739,6 @@ if (dom.formPundi) {
         await PundiService.updatePundi(currentUser.uid, id, {
           name,
           description: desc,
-          monthlyBudget: budget,
           icon,
           color
         });
@@ -707,8 +747,6 @@ if (dom.formPundi) {
         await PundiService.createPundi(currentUser.uid, {
           name,
           description: desc,
-          monthlyBudget: budget,
-          initialBalance: balance,
           icon,
           color
         });
@@ -724,6 +762,157 @@ if (dom.formPundi) {
     }
   });
 }
+
+/**
+ * Open Modal to Return Balance from Pundi to Saldo Tersedia
+ */
+function openReturnPundiModal(pundiItem) {
+  if (!dom.modalPundiReturn || !pundiItem) return;
+  dom.formPundiReturn.reset();
+  Validator.clearFormErrors(dom.formPundiReturn);
+
+  document.getElementById('return-pundi-id').value = pundiItem.id;
+  document.getElementById('return-pundi-name').textContent = pundiItem.name;
+  document.getElementById('return-pundi-cur-balance').textContent = Currency.format(pundiItem.balance || 0);
+
+  const amountInput = document.getElementById('return-pundi-amount');
+  amountInput.value = '';
+
+  const btnAll = document.getElementById('btn-return-all-pundi');
+  if (btnAll) {
+    btnAll.onclick = () => {
+      amountInput.value = Currency.formatNumber(pundiItem.balance || 0);
+    };
+  }
+
+  openModal(dom.modalPundiReturn);
+  refreshIcons();
+}
+
+// Return Pundi Balance Submit Listener
+if (dom.formPundiReturn) {
+  dom.formPundiReturn.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btnSubmit = dom.formPundiReturn.querySelector('button[type="submit"]');
+    const pundiId = document.getElementById('return-pundi-id').value;
+    const amountVal = Currency.parse(document.getElementById('return-pundi-amount').value);
+    const pundi = cachedPundis.find(p => p.id === pundiId);
+    if (!pundi) return;
+
+    Validator.clearFormErrors(dom.formPundiReturn);
+    if (!amountVal || isNaN(amountVal) || amountVal <= 0) {
+      Validator.showFieldError(document.getElementById('return-pundi-amount'), 'Nominal harus lebih dari Rp0.');
+      return;
+    }
+    if (amountVal > Number(pundi.balance || 0)) {
+      Validator.showFieldError(document.getElementById('return-pundi-amount'), `Nominal melebihi saldo Pundi (${Currency.format(pundi.balance || 0)}).`);
+      return;
+    }
+
+    btnSubmit.disabled = true;
+    try {
+      await PundiService.returnBalanceToAvailable(currentUser.uid, pundiId, amountVal);
+      showToast(`Saldo ${Currency.format(amountVal)} berhasil dikembalikan ke Saldo Tersedia.`, 'success');
+      closeModal(dom.modalPundiReturn);
+      await loadPundiView();
+      await refreshBaselineData();
+    } catch (err) {
+      showToast(formatFriendlyError(err), 'error');
+    } finally {
+      btnSubmit.disabled = false;
+    }
+  });
+}
+
+/**
+ * Open Modal to Allocate Saldo Tersedia to Pundi
+ */
+function openAllocateModal() {
+  if (!dom.modalPundiAllocate) return;
+  dom.formPundiAllocate.reset();
+  Validator.clearFormErrors(dom.formPundiAllocate);
+
+  // Compute available balance
+  const active = cachedPundis.filter(p => !p.isArchived);
+  let allIncome = 0;
+  let allExpense = 0;
+  (cachedTransactions || []).forEach(t => {
+    const amt = Number(t.amount || 0);
+    if (t.type === 'INCOME') allIncome += amt;
+    else if (t.type === 'EXPENSE') allExpense += amt;
+  });
+  const settings = SettingsService.getSettings();
+  const initialBalance = Number(settings.initialBalance || 0);
+  const totalPundiBalance = active.reduce((sum, p) => sum + Number(p.balance || 0), 0);
+  const totalBalance = initialBalance + allIncome - allExpense;
+  const availableBalance = Math.max(0, totalBalance - totalPundiBalance);
+
+  const availEl = document.getElementById('allocate-available-balance');
+  if (availEl) availEl.textContent = Currency.format(availableBalance);
+
+  populatePundiSelects();
+  openModal(dom.modalPundiAllocate);
+  refreshIcons();
+}
+
+// Allocate to Pundi Submit Listener
+if (dom.formPundiAllocate) {
+  dom.formPundiAllocate.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btnSubmit = dom.formPundiAllocate.querySelector('button[type="submit"]');
+    const pundiId = document.getElementById('allocate-pundi-id').value;
+    const amountVal = Currency.parse(document.getElementById('allocate-pundi-amount').value);
+
+    Validator.clearFormErrors(dom.formPundiAllocate);
+    if (!pundiId) {
+      const trigger = document.getElementById('cs-trigger-allocate-pundi-id') || document.getElementById('allocate-pundi-id');
+      Validator.showFieldError(trigger, 'Pilih Pundi tujuan alokasi.');
+      return;
+    }
+    if (!amountVal || isNaN(amountVal) || amountVal <= 0) {
+      Validator.showFieldError(document.getElementById('allocate-pundi-amount'), 'Nominal harus lebih dari Rp0.');
+      return;
+    }
+
+    // Check available balance
+    const active = cachedPundis.filter(p => !p.isArchived);
+    let allIncome = 0;
+    let allExpense = 0;
+    (cachedTransactions || []).forEach(t => {
+      const amt = Number(t.amount || 0);
+      if (t.type === 'INCOME') allIncome += amt;
+      else if (t.type === 'EXPENSE') allExpense += amt;
+    });
+    const settings = SettingsService.getSettings();
+    const initialBalance = Number(settings.initialBalance || 0);
+    const totalPundiBalance = active.reduce((sum, p) => sum + Number(p.balance || 0), 0);
+    const totalBalance = initialBalance + allIncome - allExpense;
+    const availableBalance = Math.max(0, totalBalance - totalPundiBalance);
+
+    if (amountVal > availableBalance) {
+      Validator.showFieldError(document.getElementById('allocate-pundi-amount'), `Saldo Tersedia tidak mencukupi (${Currency.format(availableBalance)}).`);
+      return;
+    }
+
+    btnSubmit.disabled = true;
+    try {
+      await PundiService.allocateFromAvailable(currentUser.uid, pundiId, amountVal);
+      showToast(`Berhasil mengalokasikan ${Currency.format(amountVal)} ke Pundi.`, 'success');
+      closeModal(dom.modalPundiAllocate);
+      await loadPundiView();
+      await refreshBaselineData();
+    } catch (err) {
+      showToast(formatFriendlyError(err), 'error');
+    } finally {
+      btnSubmit.disabled = false;
+    }
+  });
+}
+
+// Bind "Alokasikan Saldo" buttons
+document.querySelectorAll('.btn-open-allocate-modal').forEach(b => {
+  b.addEventListener('click', () => openAllocateModal());
+});
 
 /* ==========================================================================
    VIEW 2: TRANSACTIONS MANAGEMENT (Search, Filter, Edit, Delete)
@@ -847,8 +1036,8 @@ async function loadTransactionsView() {
           <ul class="list">
             ${list.map(t => {
               const cat = catMap[t.categoryId] || { name: 'Kategori', icon: 'tag' };
-              const pundi = pundiMap[t.pundiId] || { name: 'Pundi' };
-              const destPundi = t.destinationPundiId ? pundiMap[t.destinationPundiId] : null;
+              const pundi = t.pundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.pundiId] || { name: 'Pundi' });
+              const destPundi = t.destinationPundiId ? (t.destinationPundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.destinationPundiId] || { name: 'Pundi' })) : null;
 
               let iconName = cat.icon || 'arrow-left-right';
               let subtitle = `${escapeHtml(pundi.name)}`;
@@ -1009,6 +1198,15 @@ function updateTxPundiHint() {
     return;
   }
 
+  if (pundiId === 'MAIN_WALLET') {
+    if (type === 'INCOME') {
+      infoEl.innerHTML = `<span style="color:var(--text-2); font-size:12px;">Masuk ke Saldo Tersedia (bebas dialokasikan kapan saja).</span>`;
+    } else {
+      infoEl.innerHTML = `<span style="color:var(--text-2); font-size:12px;">Bayar langsung dari Saldo Tersedia.</span>`;
+    }
+    return;
+  }
+
   const pundi = cachedPundis.find(p => p.id === pundiId);
   if (!pundi) {
     infoEl.innerHTML = '';
@@ -1102,7 +1300,7 @@ if (dom.formTx) {
       return;
     }
 
-    if (!pundiId) {
+    if (!pundiId && type !== 'INCOME') {
       const pundiTrigger = document.getElementById('cs-trigger-tx-pundi') || document.getElementById('tx-pundi');
       Validator.showFieldError(pundiTrigger, 'Pundi wajib dipilih.');
       return;
@@ -1133,7 +1331,7 @@ if (dom.formTx) {
     }
 
     // Strict balance check on new EXPENSE or TRANSFER
-    if (!id && (type === 'EXPENSE' || type === 'TRANSFER') && sourceBalance < amount) {
+    if (!id && pundiId !== 'MAIN_WALLET' && (type === 'EXPENSE' || type === 'TRANSFER') && sourceBalance < amount) {
       const errText = type === 'TRANSFER' ? 'Saldo Pundi tidak mencukupi untuk transfer.' : 'Saldo Pundi tidak mencukupi.';
       Validator.showFieldError(document.getElementById('tx-amount'), errText);
       showToast(`Saldo Pundi "${sourcePundi?.name || 'terpilih'}" tidak mencukupi (${Currency.format(sourceBalance)}).`, 'error');
@@ -2109,6 +2307,7 @@ AuthService.requireAuth(async (user) => {
   CustomSelect.init('tx-pundi');
   CustomSelect.init('tx-dest-pundi');
   CustomSelect.init('tx-category');
+  CustomSelect.init('allocate-pundi-id');
 
   // Bind navigation links (global delegation + direct links)
   document.addEventListener('click', (e) => {
