@@ -48,10 +48,10 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/variables.css?v=1.5.1">
-  <link rel="stylesheet" href="css/style.css?v=1.5.1">
-  <link rel="stylesheet" href="css/components.css?v=1.5.1">
-  <link rel="stylesheet" href="css/responsive.css?v=1.5.1">
+  <link rel="stylesheet" href="css/variables.css?v=1.5.2">
+  <link rel="stylesheet" href="css/style.css?v=1.5.2">
+  <link rel="stylesheet" href="css/components.css?v=1.5.2">
+  <link rel="stylesheet" href="css/responsive.css?v=1.5.2">
 
   <!-- Chart.js & Lucide Icons -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -257,7 +257,7 @@
             <dd id="pundi-summary-expense">Rp0</dd>
           </div>
           <div class="summary-item summary-item-wide">
-            <dt><i data-lucide="piggy-bank" class="icon" style="width:15px;height:15px;"></i> Total Saldo Pundi</dt>
+            <dt><i data-lucide="vault" class="icon" style="width:15px;height:15px;"></i> Total Saldo Pundi</dt>
             <dd id="pundi-total-allocated">Rp0</dd>
           </div>
         </dl>
@@ -736,7 +736,7 @@
             <label>Icon Pundi</label>
             <div class="icon-picker" id="pundi-icon-picker">
               <label class="icon-option"><input type="radio" name="pundi_icon" value="wallet" checked><span><i data-lucide="wallet" style="width:18px;height:18px;"></i></span></label>
-              <label class="icon-option"><input type="radio" name="pundi_icon" value="piggy-bank"><span><i data-lucide="piggy-bank" style="width:18px;height:18px;"></i></span></label>
+              <label class="icon-option"><input type="radio" name="pundi_icon" value="vault"><span><i data-lucide="vault" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="shopping-bag"><span><i data-lucide="shopping-bag" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="coffee"><span><i data-lucide="coffee" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="home"><span><i data-lucide="home" style="width:18px;height:18px;"></i></span></label>
@@ -1026,6 +1026,22 @@
               <span>Tambah</span>
             </button>
           </div>
+          <!-- Color Swatches for New Tag -->
+          <div style="margin-top: 10px;">
+            <span class="subtle xsmall" style="font-weight: 600; display: block; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.04em;">Pilihan Warna Tag</span>
+            <div class="swatches cat-swatches" id="new-cat-swatches">
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#10B981" checked><span style="--c:#10B981;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#3B82F6"><span style="--c:#3B82F6;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#06B6D4"><span style="--c:#06B6D4;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#8B5CF6"><span style="--c:#8B5CF6;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#EC4899"><span style="--c:#EC4899;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#F59E0B"><span style="--c:#F59E0B;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#EF4444"><span style="--c:#EF4444;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#F97316"><span style="--c:#F97316;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#14B8A6"><span style="--c:#14B8A6;"></span></label>
+              <label class="swatch"><input type="radio" name="new_cat_color" value="#6366F1"><span style="--c:#6366F1;"></span></label>
+            </div>
+          </div>
         </form>
 
         <!-- Category List -->
@@ -1061,6 +1077,22 @@
           <div class="field">
             <label for="edit-cat-name" class="small" style="font-weight: 500; display: block; margin-bottom: 6px;">Nama Kategori</label>
             <input type="text" id="edit-cat-name" class="input" required placeholder="Contoh: Belanja Bulanan">
+          </div>
+          <!-- Color Swatches for Edit Tag -->
+          <div class="field" style="margin-top: 12px;">
+            <label class="small" style="font-weight: 500; display: block; margin-bottom: 6px;">Pilihan Warna Tag</label>
+            <div class="swatches cat-swatches" id="edit-cat-swatches">
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#10B981" checked><span style="--c:#10B981;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#3B82F6"><span style="--c:#3B82F6;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#06B6D4"><span style="--c:#06B6D4;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#8B5CF6"><span style="--c:#8B5CF6;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#EC4899"><span style="--c:#EC4899;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#F59E0B"><span style="--c:#F59E0B;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#EF4444"><span style="--c:#EF4444;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#F97316"><span style="--c:#F97316;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#14B8A6"><span style="--c:#14B8A6;"></span></label>
+              <label class="swatch"><input type="radio" name="edit_cat_color" value="#6366F1"><span style="--c:#6366F1;"></span></label>
+            </div>
           </div>
           <div class="form-actions" style="margin-top: 18px; display: flex; gap: 8px; justify-content: flex-end;">
             <button type="button" class="btn btn-secondary" data-close-modal>Batal</button>
@@ -1348,6 +1380,6 @@
   <div class="toast-root" role="region" aria-label="Pemberitahuan"></div>
 
   <!-- Main ES Module Script -->
-  <script type="module" src="js/app.js?v=1.5.1"></script>
+  <script type="module" src="js/app.js?v=1.5.2"></script>
 </body>
 </html>

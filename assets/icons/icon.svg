@@ -1,13 +1,86 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="112" fill="#181B1F"/>
-  <rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#30363D" stroke-width="4"/>
-  <!-- Wallet Body -->
-  <rect x="96" y="144" width="320" height="224" rx="28" fill="#1D2125" stroke="#10B981" stroke-width="20"/>
-  <!-- Wallet Flap / Pouch accent -->
-  <path d="M96 200 H416" stroke="#30363D" stroke-width="16" stroke-linecap="round"/>
-  <!-- Wallet clasp / coin slot -->
-  <rect x="300" y="226" width="116" height="60" rx="18" fill="#064E3B" stroke="#10B981" stroke-width="14"/>
-  <circle cx="334" cy="256" r="12" fill="#10B981"/>
-  <!-- Minimal accent dot -->
-  <circle cx="140" cy="176" r="8" fill="#10B981" opacity="0.8"/>
+  <defs>
+    <!-- Background Gradient: Vibrant Emerald to Deep Lush Teal -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="50%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#046A50"/>
+    </linearGradient>
+
+    <!-- Top Specular Gloss Highlight -->
+    <linearGradient id="glossGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Vibrant Gold Card Gradient -->
+    <linearGradient id="goldCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="50%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+
+    <!-- Golden Coin Accent Gradient -->
+    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB"/>
+      <stop offset="40%" stop-color="#FCD34D"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+
+    <!-- Clasp Gradient -->
+    <linearGradient id="claspGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#047857"/>
+      <stop offset="100%" stop-color="#064E3B"/>
+    </linearGradient>
+
+    <!-- Soft Ambient Drop Shadow -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#022C22" flood-opacity="0.45"/>
+    </filter>
+
+    <filter id="claspShadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="6" stdDeviation="8" flood-color="#022C22" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <!-- Base App Squircle with Lush Vibrant Gradient -->
+  <rect width="512" height="512" rx="116" fill="url(#bgGrad)"/>
+
+  <!-- Subtle Top Specular Curved Sheen -->
+  <path d="M0 116 C 0 52, 52 0, 116 0 L 396 0 C 460 0, 512 52, 512 116 L 512 190 C 340 160, 160 210, 0 250 Z" fill="url(#glossGrad)"/>
+
+  <!-- Border Outline for App Icon Definition -->
+  <rect x="2" y="2" width="508" height="508" rx="114" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-opacity="0.25"/>
+
+  <!-- Emblem Group with Realistic Shadow -->
+  <g filter="url(#dropShadow)">
+    <!-- Peeking Gold Payment / Savings Card -->
+    <rect x="160" y="118" width="192" height="110" rx="18" fill="url(#goldCardGrad)"/>
+    <!-- Card Chip / Detail -->
+    <rect x="184" y="142" width="34" height="24" rx="6" fill="#FFFFFF" fill-opacity="0.75"/>
+    <circle cx="316" cy="154" r="14" fill="#FFFFFF" fill-opacity="0.3"/>
+    <circle cx="330" cy="154" r="14" fill="#FFFFFF" fill-opacity="0.2"/>
+
+    <!-- Main Premium White Wallet Body -->
+    <rect x="96" y="172" width="320" height="226" rx="36" fill="#FFFFFF"/>
+
+    <!-- Wallet Inner Fold / Pocket Line -->
+    <path d="M 96 226 L 416 226" stroke="#E2E8F0" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Pocket Emboss Gradient Curve -->
+    <path d="M 96 226 C 180 260, 332 260, 416 226 L 416 362 C 416 382, 400 398, 380 398 L 132 398 C 112 398, 96 382, 96 362 Z" fill="#F8FAFC"/>
+
+    <!-- Modern Clasp Tab -->
+    <g filter="url(#claspShadow)">
+      <path d="M 314 246 L 404 246 C 420 246, 432 258, 432 274 L 432 296 C 432 312, 420 324, 404 324 L 314 324 Z" fill="url(#claspGrad)" stroke="#FFFFFF" stroke-width="7"/>
+      <!-- Sparkling Gold Coin Clasp Center -->
+      <circle cx="380" cy="285" r="19" fill="url(#coinGrad)"/>
+      <circle cx="380" cy="285" r="15" fill="none" stroke="#D97706" stroke-width="2" stroke-opacity="0.6"/>
+      <!-- Coin Star / Spark Icon -->
+      <polygon points="380,277 382.5,283 388,285 382.5,287 380,293 377.5,287 372,285 377.5,283" fill="#FFFFFF"/>
+    </g>
+
+    <!-- Modern Growth Spark on Top Left of Wallet -->
+    <polygon points="144,142 147,150 155,153 147,156 144,164 141,156 133,153 141,150" fill="#FCD34D"/>
+  </g>
 </svg>

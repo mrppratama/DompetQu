@@ -229,6 +229,39 @@ input[type="search"]::-webkit-search-cancel-button {
   position: relative;
 }
 
+.input-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-password-wrapper .input {
+  padding-right: 44px;
+}
+
+.btn-toggle-password {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--text-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+
+.btn-toggle-password:hover {
+  color: var(--text-1);
+  background: var(--surface-2);
+}
+
 .input-prefix > span {
   position: absolute;
   left: 12px;

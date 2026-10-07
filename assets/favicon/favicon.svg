@@ -1,7 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
-  <rect width="64" height="64" rx="14" fill="#181B1F"/>
-  <rect x="12" y="18" width="40" height="28" rx="5" fill="#1D2125" stroke="#10B981" stroke-width="3"/>
-  <line x1="12" y1="26" x2="52" y2="26" stroke="#30363D" stroke-width="2"/>
-  <rect x="36" y="29" width="16" height="8" rx="2.5" fill="#064E3B" stroke="#10B981" stroke-width="2"/>
-  <circle cx="41" cy="33" r="1.5" fill="#10B981"/>
+  <defs>
+    <linearGradient id="favBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="50%" stop-color="#059669"/>
+      <stop offset="100%" stop-color="#046A50"/>
+    </linearGradient>
+    <linearGradient id="favGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE68A"/>
+      <stop offset="100%" stop-color="#F59E0B"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background squircle -->
+  <rect width="64" height="64" rx="15" fill="url(#favBg)"/>
+
+  <!-- Peeking Gold Card -->
+  <rect x="20" y="14" width="24" height="15" rx="3" fill="url(#favGold)"/>
+
+  <!-- Wallet Body -->
+  <rect x="12" y="22" width="40" height="28" rx="5" fill="#FFFFFF"/>
+  <path d="M 12 29 C 22 34, 42 34, 52 29 L 52 45 C 52 47.5, 49.5 50, 47 50 L 17 50 C 14.5 50, 12 47.5, 12 45 Z" fill="#F1F5F9"/>
+
+  <!-- Clasp & Coin -->
+  <rect x="38" y="31" width="16" height="10" rx="3.5" fill="#047857" stroke="#FFFFFF" stroke-width="1.2"/>
+  <circle cx="48" cy="36" r="2.8" fill="url(#favGold)"/>
 </svg>

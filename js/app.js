@@ -1954,7 +1954,7 @@ function renderCategoryModalList(type = activeCatModalType) {
         <span style="font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(cat.name)}</span>
       </div>
       <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-        <button type="button" class="icon-btn icon-btn-sm btn-edit-cat" data-cat-id="${cat.id}" data-cat-name="${escapeHtml(cat.name)}" title="Edit Kategori">
+        <button type="button" class="icon-btn icon-btn-sm btn-edit-cat" data-cat-id="${cat.id}" data-cat-name="${escapeHtml(cat.name)}" data-cat-color="${cat.color || '#10B981'}" title="Edit Kategori">
           <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
         </button>
         <button type="button" class="icon-btn icon-btn-sm btn-delete-cat text-expense" data-cat-id="${cat.id}" data-cat-name="${escapeHtml(cat.name)}" title="Hapus Kategori" style="color: var(--danger);">
@@ -1971,10 +1971,21 @@ function renderCategoryModalList(type = activeCatModalType) {
     btn.addEventListener('click', (e) => {
       const catId = e.currentTarget.getAttribute('data-cat-id');
       const catName = e.currentTarget.getAttribute('data-cat-name');
+      const catColor = e.currentTarget.getAttribute('data-cat-color') || '#10B981';
       const idInput = document.getElementById('edit-cat-id');
       const nameInput = document.getElementById('edit-cat-name');
       if (idInput) idInput.value = catId;
       if (nameInput) nameInput.value = catName;
+
+      // Sync color radio
+      const colorRadio = dom.formEditCategory?.querySelector(`input[name="edit_cat_color"][value="${catColor}"]`);
+      if (colorRadio) {
+        colorRadio.checked = true;
+      } else {
+        const firstRadio = dom.formEditCategory?.querySelector('input[name="edit_cat_color"]');
+        if (firstRadio) firstRadio.checked = true;
+      }
+
       if (dom.modalEditCategory) {
         Validator.clearFormErrors(dom.formEditCategory);
         openModal(dom.modalEditCategory);
@@ -2035,6 +2046,7 @@ function initCategoryListeners() {
       const typeInput = document.getElementById('new-cat-type');
       const name = nameInput ? nameInput.value.trim() : '';
       const type = typeInput ? typeInput.value : activeCatModalType;
+      const color = dom.formCategory.querySelector('input[name="new_cat_color"]:checked')?.value || '#10B981';
 
       if (!name) {
         Validator.showFieldError(nameInput, 'Nama kategori wajib diisi.');
@@ -2049,7 +2061,7 @@ function initCategoryListeners() {
           name,
           type,
           icon: 'tag',
-          color: '#10B981'
+          color
         });
         if (nameInput) nameInput.value = '';
         cachedCategories = await CategoryService.getCategories(currentUser.uid);
@@ -2074,6 +2086,7 @@ function initCategoryListeners() {
       const nameInput = document.getElementById('edit-cat-name');
       const catId = idInput ? idInput.value : '';
       const newName = nameInput ? nameInput.value.trim() : '';
+      const newColor = dom.formEditCategory.querySelector('input[name="edit_cat_color"]:checked')?.value || '#10B981';
 
       if (!newName) {
         Validator.showFieldError(nameInput, 'Nama kategori wajib diisi.');
@@ -2084,7 +2097,7 @@ function initCategoryListeners() {
       if (btnSubmit) btnSubmit.disabled = true;
 
       try {
-        await CategoryService.updateCategory(currentUser.uid, catId, { name: newName });
+        await CategoryService.updateCategory(currentUser.uid, catId, { name: newName, color: newColor });
         if (dom.modalEditCategory) closeModal(dom.modalEditCategory);
         cachedCategories = await CategoryService.getCategories(currentUser.uid);
         renderCategoryModalList(activeCatModalType);

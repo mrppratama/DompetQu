@@ -424,7 +424,7 @@ export function generateId(prefix = 'id') {
  */
 export const AVAILABLE_PUNDI_ICONS = [
   { id: 'wallet', label: 'Dompet' },
-  { id: 'piggy-bank', label: 'Tabungan' },
+  { id: 'vault', label: 'Brankas' },
   { id: 'shopping-bag', label: 'Belanja' },
   { id: 'coffee', label: 'Makan & Kafe' },
   { id: 'home', label: 'Rumah & Tempat Tinggal' },
@@ -443,6 +443,7 @@ export const AVAILABLE_PUNDI_ICONS = [
 export function resolvePundiIcon(iconName) {
   if (!iconName || typeof iconName !== 'string') return 'wallet';
   const clean = iconName.trim().toLowerCase();
+  if (clean === 'piggy-bank') return 'vault';
   const exists = AVAILABLE_PUNDI_ICONS.some(item => item.id === clean);
   return exists ? clean : 'wallet';
 }
