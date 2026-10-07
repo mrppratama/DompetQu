@@ -4,6 +4,26 @@ Semua perubahan dan pembaruan penting pada aplikasi DompetQu (Personal Finance P
 
 Format pencatatan merujuk pada standar [Keep a Changelog](https://keepachangelog.com/id/1.0.0/).
 
+## [1.5.0] - 2026-10-07
+
+### Fitur Baru, Standarisasi Global & Perbaikan
+- **Standarisasi Global Filter Waktu:**
+  - Urutan seragam di seluruh aplikasi: `1. Hari Ini`, `2. 7 Hari`, `3. Bulan Ini`, `4. Bulan Lalu`, `5. Custom`.
+  - Default otomatis berada pada `Hari Ini` saat pertama kali membuka halaman.
+  - Opsi `Custom` dikembalikan ke halaman Laporan dan dibuat berfungsi penuh dengan pemilih rentang tanggal (Tanggal Mulai, Tanggal Akhir, Batal, Terapkan).
+  - Validasi kustom DompetQu (tanpa native browser alert): "Tanggal mulai tidak boleh lebih besar dari tanggal akhir." dan "Tentukan tanggal mulai dan tanggal akhir."
+  - Desain UI filter modern, bersih, dan agak kotak (`border-radius: 8px`), menghilangkan gaya kapsul/pill bulat berlebihan.
+  - Penanganan tanggal lokal konsisten tanpa pergeseran zona waktu UTC.
+- **Penyempurnaan Total CRUD & Alokasi Pundi-Pundi:**
+  - Buat Pundi baru tanpa kolom budget, saldo awal Rp0, langsung tampil instan.
+  - Edit Pundi memperbarui nama, ikon, dan catatan tanpa mengubah saldo.
+  - Alokasikan Saldo berjalan 100% andal dengan validasi terhadap Saldo Tersedia yang akurat.
+  - Tombol Hapus Pundi hanya muncul pada status Pundi Diarsipkan dan dilindungi validasi saldo Rp0 (Pundi bersaldo > Rp0 tidak dapat dihapus).
+  - Ringkasan halaman Pundi disederhanakan menjadi: Pemasukan, Pengeluaran, dan Total Saldo Pundi.
+  - Refresh ikon Lucide otomatis pada setiap pembaruan DOM sehingga ikon tidak pernah hilang atau butuh refresh browser.
+
+---
+
 ## [1.4.1] - 2026-10-07
 
 ### Perbaikan & Penyempurnaan (Fixes & Improvements)

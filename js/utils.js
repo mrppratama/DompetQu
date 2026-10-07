@@ -138,14 +138,23 @@ export const Currency = {
 
 export const DateUtil = {
   /**
-   * Today in YYYY-MM-DD
+   * Convert Date object to local YYYY-MM-DD string
    */
-  todayString() {
-    const d = new Date();
+  toLocalDateString(dateInput) {
+    if (!dateInput) return '';
+    const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    if (isNaN(d.getTime())) return '';
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  },
+
+  /**
+   * Today in YYYY-MM-DD using local time
+   */
+  todayString() {
+    return this.toLocalDateString(new Date());
   },
 
   /**
@@ -154,11 +163,18 @@ export const DateUtil = {
    */
   formatDate(dateInput, includeYear = true) {
     if (!dateInput) return '-';
-    const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    // If string like "2026-10-07", parse with local parts to avoid UTC shift
+    let d;
+    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+      const [y, m, day] = dateInput.split('-').map(Number);
+      d = new Date(y, m - 1, day);
+    } else {
+      d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    }
     if (isNaN(d.getTime())) return '-';
 
     const opts = {
-      day: '2-digit',
+      day: 'numeric',
       month: 'short',
       ...(includeYear ? { year: 'numeric' } : {})
     };
@@ -167,7 +183,13 @@ export const DateUtil = {
 
   formatFull(dateInput) {
     if (!dateInput) return '-';
-    const d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    let d;
+    if (typeof dateInput === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+      const [y, m, day] = dateInput.split('-').map(Number);
+      d = new Date(y, m - 1, day);
+    } else {
+      d = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    }
     if (isNaN(d.getTime())) return '-';
     return d.toLocaleDateString('id-ID', {
       weekday: 'long',
@@ -200,6 +222,108 @@ export const DateUtil = {
     start.setDate(start.getDate() - 6);
     start.setHours(0, 0, 0, 0);
     return { start, end };
+  },
+
+  /**
+   * Unified Period Range Calculator conforming to DompetQu Global Rules:
+   * 1. Hari Ini: 00:00 - 23:59:59 hari berjalan
+   * 2. 7 Hari: 7 hari terakhir termasuk hari ini (e.g. 1 Okt - 7 Okt)
+   * 3. Bulan Ini: tanggal 1 bulan berjalan sampai hari berjalan
+   * 4. Bulan Lalu: tanggal 1 sampai hari terakhir bulan sebelumnya
+   * 5. Custom: customStart s.d. customEnd
+   */
+  getPeriodRange(periodKey = 'today', customStart = null, customEnd = null) {
+    const now = new Date();
+    const todayStr = this.toLocalDateString(now);
+
+    if (periodKey === '7days') {
+      const start = new Date(now);
+      start.setDate(start.getDate() - 6);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+
+      const startStr = this.toLocalDateString(start);
+      const endStr = this.toLocalDateString(end);
+      return {
+        period: '7days',
+        startDate: startStr,
+        endDate: endStr,
+        startObj: start,
+        endObj: end,
+        label: `7 Hari (${this.formatDate(startStr, false)} - ${this.formatDate(endStr)})`,
+        shortLabel: '7 Hari',
+        displayRange: `${this.formatDate(startStr, false)} - ${this.formatDate(endStr)}`
+      };
+    }
+
+    if (periodKey === 'month') {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+
+      const startStr = this.toLocalDateString(start);
+      const endStr = this.toLocalDateString(end);
+      return {
+        period: 'month',
+        startDate: startStr,
+        endDate: endStr,
+        startObj: start,
+        endObj: end,
+        label: `Bulan Ini (${this.formatDate(startStr, false)} - ${this.formatDate(endStr)})`,
+        shortLabel: 'Bulan Ini',
+        displayRange: `${this.formatDate(startStr, false)} - ${this.formatDate(endStr)}`
+      };
+    }
+
+    if (periodKey === 'lastmonth') {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, 0, 0, 0);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+
+      const startStr = this.toLocalDateString(start);
+      const endStr = this.toLocalDateString(end);
+      return {
+        period: 'lastmonth',
+        startDate: startStr,
+        endDate: endStr,
+        startObj: start,
+        endObj: end,
+        label: `Bulan Lalu (${this.formatDate(startStr, false)} - ${this.formatDate(endStr)})`,
+        shortLabel: 'Bulan Lalu',
+        displayRange: `${this.formatDate(startStr, false)} - ${this.formatDate(endStr)}`
+      };
+    }
+
+    if (periodKey === 'custom') {
+      const s = customStart || todayStr;
+      const e = customEnd || todayStr;
+      return {
+        period: 'custom',
+        startDate: s,
+        endDate: e,
+        startObj: new Date(s + 'T00:00:00'),
+        endObj: new Date(e + 'T23:59:59'),
+        label: `Custom (${this.formatDate(s, false)} - ${this.formatDate(e)})`,
+        shortLabel: `${this.formatDate(s, false)} - ${this.formatDate(e)}`,
+        displayRange: `${this.formatDate(s, false)} - ${this.formatDate(e)}`
+      };
+    }
+
+    // Default: 'today'
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+    return {
+      period: 'today',
+      startDate: todayStr,
+      endDate: todayStr,
+      startObj: start,
+      endObj: end,
+      label: `Hari Ini (${this.formatDate(todayStr)})`,
+      shortLabel: 'Hari Ini',
+      displayRange: this.formatDate(todayStr)
+    };
   },
 
   isSameDay(d1, d2) {
@@ -252,10 +376,21 @@ export function debounce(fn, delay = 250) {
 
 /**
  * Trigger lucide icons refresh if available globally
+ * Guarantees icon rendering without requiring browser refresh
  */
 export function refreshIcons() {
-  if (window.lucide && typeof window.lucide.createIcons === 'function') {
-    window.lucide.createIcons();
+  if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
+    try {
+      window.lucide.createIcons();
+    } catch (e) {}
+
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => {
+        try {
+          if (window.lucide) window.lucide.createIcons();
+        } catch (e) {}
+      });
+    }
   }
 }
 

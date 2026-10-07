@@ -377,51 +377,71 @@ input[type="search"]::-webkit-search-cancel-button {
   outline-offset: -2px;
 }
 
-/* ---------- Chips ---------- */
-.chips {
+/* ---------- Chips & Time Period Filter Controls ---------- */
+.chips,
+.period-chips {
   display: flex;
+  align-items: center;
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding-bottom: 2px;
+  padding: 4px 0 6px;
+  -webkit-overflow-scrolling: touch;
 }
 
-.chips::-webkit-scrollbar {
+.chips::-webkit-scrollbar,
+.period-chips::-webkit-scrollbar {
   display: none;
 }
 
 .chip {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   flex: none;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: transparent;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-sm, 8px); /* Rectangular modern card/control shape, not capsule/pill */
+  background: var(--surface);
   color: var(--text-2);
   font-size: var(--fs-sm);
   font-weight: 500;
+  font-family: var(--font);
   cursor: pointer;
-  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+  white-space: nowrap;
+  user-select: none;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 
 .chip:hover {
   color: var(--text);
+  border-color: var(--border);
+  background: var(--surface-2);
 }
 
 .chip[aria-pressed="true"] {
-  border-color: var(--primary-dark);
+  border-color: var(--primary);
   background: var(--primary-soft);
   color: var(--primary);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.chip i,
+.chip svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
 }
 
 .chip-removable {
-  height: 28px;
-  padding: 0 6px 0 10px;
+  height: 30px;
+  padding: 0 8px 0 10px;
   background: var(--surface-2);
   border-color: var(--border-soft);
+  border-radius: var(--radius-sm, 8px);
   font-size: var(--fs-xs);
 }
 

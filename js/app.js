@@ -21,6 +21,19 @@ let cachedPundis = [];
 let cachedCategories = [];
 let cachedTransactions = [];
 let cachedGoals = [];
+let cachedAllTransactions = null;
+
+async function getAllUserTransactions(forceRefresh = false) {
+  if (!currentUser) return [];
+  if (!cachedAllTransactions || forceRefresh) {
+    cachedAllTransactions = await TransactionService.getTransactions(currentUser.uid);
+  }
+  return cachedAllTransactions;
+}
+
+function invalidateTransactionsCache() {
+  cachedAllTransactions = null;
+}
 
 // DOM references
 const dom = {
@@ -68,6 +81,8 @@ const dom = {
   formPundiReturn: document.getElementById('form-pundi-return'),
   modalPundiAllocate: document.getElementById('modal-pundi-allocate'),
   formPundiAllocate: document.getElementById('form-pundi-allocate'),
+  modalCustomDate: document.getElementById('modal-custom-date'),
+  formCustomDate: document.getElementById('form-custom-date'),
   modalGoal: document.getElementById('modal-goal'),
   formGoal: document.getElementById('form-goal'),
   modalAddGoalSaving: document.getElementById('modal-goal-saving'),
@@ -458,11 +473,8 @@ async function loadPundiView() {
   const active = cachedPundis.filter(p => !p.isArchived);
   const archived = cachedPundis.filter(p => p.isArchived);
 
-  // Compute Total Saldo, Total Pundi, and Saldo Tersedia for Pundi Overview
-  // Using cached transactions to eliminate duplicate network queries
-  const allTx = (cachedTransactions && cachedTransactions.length > 0)
-    ? cachedTransactions
-    : await TransactionService.getTransactions(currentUser.uid);
+  // Requirement 19: Clean summary structure: Pemasukan, Pengeluaran, Total Saldo Pundi
+  const allTx = await getAllUserTransactions();
 
   let allIncome = 0;
   let allExpense = 0;
@@ -472,21 +484,15 @@ async function loadPundiView() {
     else if (t.type === 'EXPENSE') allExpense += amt;
   });
 
-  const settings = SettingsService.getSettings();
-  const initialBalance = Number(settings.initialBalance || 0);
   const totalPundiBalance = active.reduce((sum, p) => sum + Number(p.balance || 0), 0);
-  const calculatedBalance = initialBalance + allIncome - allExpense;
-  const totalBalance = (allTx.length === 0 && totalPundiBalance > 0 && initialBalance === 0)
-    ? totalPundiBalance
-    : calculatedBalance;
-  const availableBalance = Math.max(0, totalBalance - totalPundiBalance);
 
-  const pundiTotalBalEl = document.getElementById('pundi-total-balance');
+  const pundiIncomeEl = document.getElementById('pundi-summary-income');
+  const pundiExpenseEl = document.getElementById('pundi-summary-expense');
   const pundiAllocatedEl = document.getElementById('pundi-total-allocated');
-  const pundiAvailableEl = document.getElementById('pundi-available-balance');
-  if (pundiTotalBalEl) pundiTotalBalEl.textContent = Currency.format(totalBalance);
+
+  if (pundiIncomeEl) pundiIncomeEl.textContent = Currency.format(allIncome);
+  if (pundiExpenseEl) pundiExpenseEl.textContent = Currency.format(allExpense);
   if (pundiAllocatedEl) pundiAllocatedEl.textContent = Currency.format(totalPundiBalance);
-  if (pundiAvailableEl) pundiAvailableEl.textContent = Currency.format(availableBalance);
 
   if (active.length === 0) {
     pundiContainer.innerHTML = `
@@ -494,11 +500,9 @@ async function loadPundiView() {
         <div class="empty-icon"><i data-lucide="wallet" style="width:24px;height:24px;"></i></div>
         <p class="empty-title">Belum ada Pundi aktif</p>
         <p class="empty-text">Buat Pundi untuk membagi uang Anda ke pos-pos kebutuhan.</p>
-        <button type="button" class="btn btn-primary btn-sm" id="btn-add-pundi-empty">Buat Pundi Pertama</button>
+        <button type="button" class="btn btn-primary btn-sm btn-open-pundi-modal" id="btn-add-pundi-empty">Buat Pundi Pertama</button>
       </div>
     `;
-    const btnEmpty = document.getElementById('btn-add-pundi-empty');
-    if (btnEmpty) btnEmpty.addEventListener('click', () => openPundiModal());
   } else {
     // Pure Envelope budgeting cards: No budget, no percentage, no progress bars
     pundiContainer.innerHTML = active.map(p => {
@@ -576,98 +580,6 @@ async function loadPundiView() {
       }).join('');
     }
   }
-
-  // Bind actions
-  document.querySelectorAll('.btn-edit-pundi').forEach(b => {
-    b.addEventListener('click', (e) => {
-      const id = e.currentTarget.getAttribute('data-pundi-id');
-      const item = cachedPundis.find(p => p.id === id);
-      if (item) openPundiModal(item);
-    });
-  });
-
-  document.querySelectorAll('.btn-archive-pundi').forEach(b => {
-    b.addEventListener('click', (e) => {
-      const id = e.currentTarget.getAttribute('data-pundi-id');
-      const item = cachedPundis.find(p => p.id === id);
-      if (!item) return;
-
-      showConfirm({
-        title: 'Arsipkan Pundi',
-        message: `Arsipkan Pundi "${item.name}"?`,
-        subtext: 'Pundi ini tidak akan muncul saat alokasi baru, tetapi riwayat transaksi tetap tersimpan aman.',
-        actionLabel: 'Arsipkan',
-        isDanger: false,
-        onConfirm: async () => {
-          await PundiService.setArchived(currentUser.uid, id, true);
-          showToast(`Pundi "${item.name}" berhasil diarsipkan.`, 'info');
-          await loadPundiView();
-          await refreshBaselineData();
-        }
-      });
-    });
-  });
-
-  document.querySelectorAll('.btn-unarchive-pundi').forEach(b => {
-    b.addEventListener('click', async (e) => {
-      const id = e.currentTarget.getAttribute('data-pundi-id');
-      const item = cachedPundis.find(p => p.id === id);
-      await PundiService.setArchived(currentUser.uid, id, false);
-      showToast(`Pundi "${item ? item.name : ''}" berhasil dipulihkan.`, 'success');
-      await loadPundiView();
-      await refreshBaselineData();
-    });
-  });
-
-  // Action: Delete Pundi ONLY on Archived Pundi with Rp0 Balance check
-  document.querySelectorAll('.btn-delete-pundi').forEach(b => {
-    b.addEventListener('click', (e) => {
-      const id = e.currentTarget.getAttribute('data-pundi-id');
-      const item = cachedPundis.find(p => p.id === id);
-      if (!item) return;
-
-      const currentBalance = Number(item.balance || 0);
-
-      // Validation 1: Saldo Pundi > Rp0 cannot be deleted
-      if (currentBalance > 0) {
-        showConfirm({
-          title: 'Tidak Dapat Menghapus Pundi',
-          message: `Pundi masih memiliki saldo ${Currency.format(currentBalance)}.`,
-          subtext: 'Kembalikan saldo ke Saldo Tersedia sebelum menghapus Pundi.',
-          actionLabel: 'Kembalikan Saldo',
-          isDanger: false,
-          onConfirm: async () => {
-            openReturnPundiModal(item);
-          }
-        });
-        return;
-      }
-
-      // Validation 2: Saldo Pundi = Rp0 can be permanently deleted with custom confirmation modal
-      showConfirm({
-        title: 'Hapus Pundi?',
-        message: 'Apakah kamu yakin ingin menghapus Pundi ini?',
-        subtext: 'Tindakan ini tidak dapat dibatalkan. Riwayat transaksi historis tetap aman.',
-        actionLabel: 'Hapus',
-        isDanger: true,
-        onConfirm: async () => {
-          await PundiService.deletePundi(currentUser.uid, id);
-          showToast(`Pundi "${item.name}" berhasil dihapus.`, 'info');
-          await loadPundiView();
-          await refreshBaselineData();
-        }
-      });
-    });
-  });
-
-  // Action: Return Pundi balance to Saldo Tersedia
-  document.querySelectorAll('.btn-return-pundi').forEach(b => {
-    b.addEventListener('click', (e) => {
-      const id = e.currentTarget.getAttribute('data-pundi-id');
-      const item = cachedPundis.find(p => p.id === id);
-      if (item) openReturnPundiModal(item);
-    });
-  });
 
   // Refresh Lucide icons after DOM update
   refreshIcons();
@@ -827,16 +739,17 @@ if (dom.formPundiReturn) {
 /**
  * Open Modal to Allocate Saldo Tersedia to Pundi
  */
-function openAllocateModal() {
+async function openAllocateModal() {
   if (!dom.modalPundiAllocate) return;
   dom.formPundiAllocate.reset();
   Validator.clearFormErrors(dom.formPundiAllocate);
 
-  // Compute available balance
+  // Compute available balance accurately using all user transactions
+  const allTx = await getAllUserTransactions();
   const active = cachedPundis.filter(p => !p.isArchived);
   let allIncome = 0;
   let allExpense = 0;
-  (cachedTransactions || []).forEach(t => {
+  allTx.forEach(t => {
     const amt = Number(t.amount || 0);
     if (t.type === 'INCOME') allIncome += amt;
     else if (t.type === 'EXPENSE') allExpense += amt;
@@ -875,10 +788,11 @@ if (dom.formPundiAllocate) {
     }
 
     // Check available balance
+    const allTx = await getAllUserTransactions();
     const active = cachedPundis.filter(p => !p.isArchived);
     let allIncome = 0;
     let allExpense = 0;
-    (cachedTransactions || []).forEach(t => {
+    allTx.forEach(t => {
       const amt = Number(t.amount || 0);
       if (t.type === 'INCOME') allIncome += amt;
       else if (t.type === 'EXPENSE') allExpense += amt;
@@ -899,6 +813,7 @@ if (dom.formPundiAllocate) {
       await PundiService.allocateFromAvailable(currentUser.uid, pundiId, amountVal);
       showToast(`Berhasil mengalokasikan ${Currency.format(amountVal)} ke Pundi.`, 'success');
       closeModal(dom.modalPundiAllocate);
+      invalidateTransactionsCache();
       await loadPundiView();
       await refreshBaselineData();
     } catch (err) {
@@ -909,9 +824,122 @@ if (dom.formPundiAllocate) {
   });
 }
 
-// Bind "Alokasikan Saldo" buttons
-document.querySelectorAll('.btn-open-allocate-modal').forEach(b => {
-  b.addEventListener('click', () => openAllocateModal());
+// Global Click Event Delegation for Pundi actions & Buttons (ensures 100% reliable trigger)
+document.addEventListener('click', async (e) => {
+  // 1. Open Pundi Create Modal
+  const openPundiBtn = e.target.closest('.btn-open-pundi-modal, #btn-add-pundi-empty, #btn-create-first-pundi');
+  if (openPundiBtn) {
+    e.preventDefault();
+    openPundiModal();
+    return;
+  }
+
+  // 2. Open Allocate Modal
+  const openAllocBtn = e.target.closest('.btn-open-allocate-modal');
+  if (openAllocBtn) {
+    e.preventDefault();
+    await openAllocateModal();
+    return;
+  }
+
+  // 3. Edit Pundi
+  const editBtn = e.target.closest('.btn-edit-pundi');
+  if (editBtn) {
+    e.preventDefault();
+    const id = editBtn.getAttribute('data-pundi-id');
+    const item = cachedPundis.find(p => p.id === id);
+    if (item) openPundiModal(item);
+    return;
+  }
+
+  // 4. Archive Pundi
+  const archBtn = e.target.closest('.btn-archive-pundi');
+  if (archBtn) {
+    e.preventDefault();
+    const id = archBtn.getAttribute('data-pundi-id');
+    const item = cachedPundis.find(p => p.id === id);
+    if (!item) return;
+
+    showConfirm({
+      title: 'Arsipkan Pundi',
+      message: `Arsipkan Pundi "${item.name}"?`,
+      subtext: 'Pundi ini tidak akan muncul saat alokasi baru, tetapi riwayat transaksi tetap tersimpan aman.',
+      actionLabel: 'Arsipkan',
+      isDanger: false,
+      onConfirm: async () => {
+        await PundiService.setArchived(currentUser.uid, id, true);
+        showToast(`Pundi "${item.name}" berhasil diarsipkan.`, 'info');
+        await loadPundiView();
+        await refreshBaselineData();
+      }
+    });
+    return;
+  }
+
+  // 5. Restore / Unarchive Pundi
+  const unarchBtn = e.target.closest('.btn-unarchive-pundi');
+  if (unarchBtn) {
+    e.preventDefault();
+    const id = unarchBtn.getAttribute('data-pundi-id');
+    const item = cachedPundis.find(p => p.id === id);
+    await PundiService.setArchived(currentUser.uid, id, false);
+    showToast(`Pundi "${item ? item.name : ''}" berhasil dipulihkan.`, 'success');
+    await loadPundiView();
+    await refreshBaselineData();
+    return;
+  }
+
+  // 6. Delete Pundi (Requirement 17: Only on Archived, Rp0 required)
+  const delBtn = e.target.closest('.btn-delete-pundi');
+  if (delBtn) {
+    e.preventDefault();
+    const id = delBtn.getAttribute('data-pundi-id');
+    const item = cachedPundis.find(p => p.id === id);
+    if (!item) return;
+
+    const currentBalance = Number(item.balance || 0);
+
+    // If balance > 0, cannot delete
+    if (currentBalance > 0) {
+      showConfirm({
+        title: 'Tidak Dapat Menghapus Pundi',
+        message: `Pundi masih memiliki saldo ${Currency.format(currentBalance)}.`,
+        subtext: 'Kembalikan saldo ke Saldo Tersedia sebelum menghapus Pundi.',
+        actionLabel: 'Kembalikan Saldo',
+        isDanger: false,
+        onConfirm: async () => {
+          openReturnPundiModal(item);
+        }
+      });
+      return;
+    }
+
+    // If balance == 0, allow permanent deletion
+    showConfirm({
+      title: 'Hapus Pundi?',
+      message: `Apakah Anda yakin ingin menghapus Pundi "${item.name}"?`,
+      subtext: 'Pundi yang diarsipkan dengan saldo Rp0 akan dihapus permanen. Riwayat transaksi historis tetap aman.',
+      actionLabel: 'Hapus',
+      isDanger: true,
+      onConfirm: async () => {
+        await PundiService.deletePundi(currentUser.uid, id);
+        showToast(`Pundi "${item.name}" berhasil dihapus.`, 'info');
+        await loadPundiView();
+        await refreshBaselineData();
+      }
+    });
+    return;
+  }
+
+  // 7. Return Pundi
+  const returnBtn = e.target.closest('.btn-return-pundi');
+  if (returnBtn) {
+    e.preventDefault();
+    const id = returnBtn.getAttribute('data-pundi-id');
+    const item = cachedPundis.find(p => p.id === id);
+    if (item) openReturnPundiModal(item);
+    return;
+  }
 });
 
 /* ==========================================================================
@@ -919,7 +947,7 @@ document.querySelectorAll('.btn-open-allocate-modal').forEach(b => {
    ========================================================================== */
 
 let txFilterState = {
-  period: 'month', // 'today', '7days', 'month', 'lastmonth', 'custom'
+  period: 'today', // Strict Rule: 1. Hari Ini, 2. 7 Hari, 3. Bulan Ini, 4. Bulan Lalu, 5. Custom. Default: today
   type: '',        // '', 'EXPENSE', 'INCOME', 'TRANSFER'
   pundiId: '',
   categoryId: '',
@@ -934,29 +962,10 @@ async function loadTransactionsView() {
   const totalAmtEl = document.getElementById('tx-total-filtered');
   if (!container) return;
 
-  // Compute date range based on period filter
-  let startDate = null;
-  let endDate = null;
-
-  if (txFilterState.period === 'today') {
-    startDate = DateUtil.todayString();
-    endDate = DateUtil.todayString();
-  } else if (txFilterState.period === '7days') {
-    const r = DateUtil.getLast7DaysRange();
-    startDate = r.start.toISOString().split('T')[0];
-    endDate = r.end.toISOString().split('T')[0];
-  } else if (txFilterState.period === 'month') {
-    const r = DateUtil.getCurrentMonthRange();
-    startDate = r.start.toISOString().split('T')[0];
-    endDate = r.end.toISOString().split('T')[0];
-  } else if (txFilterState.period === 'lastmonth') {
-    const r = DateUtil.getLastMonthRange();
-    startDate = r.start.toISOString().split('T')[0];
-    endDate = r.end.toISOString().split('T')[0];
-  } else if (txFilterState.period === 'custom') {
-    startDate = txFilterState.customStart || null;
-    endDate = txFilterState.customEnd || null;
-  }
+  // Unified global range calculation
+  const range = DateUtil.getPeriodRange(txFilterState.period, txFilterState.customStart, txFilterState.customEnd);
+  const startDate = range.startDate;
+  const endDate = range.endDate;
 
   const transactions = await TransactionService.getTransactions(currentUser.uid, {
     startDate,
@@ -1091,17 +1100,16 @@ if (txSearchInput) {
   }, 250));
 }
 
-// Period chips
+// Period chips for Transactions (Global rule order: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Custom)
 document.querySelectorAll('[data-tx-period]').forEach(chip => {
-  chip.addEventListener('click', (e) => {
-    document.querySelectorAll('[data-tx-period]').forEach(c => c.setAttribute('aria-pressed', 'false'));
-    chip.setAttribute('aria-pressed', 'true');
+  chip.addEventListener('click', () => {
     const p = chip.getAttribute('data-tx-period');
+    if (p === 'custom') {
+      openCustomDateModal('transactions');
+      return;
+    }
     txFilterState.period = p;
-
-    const customFields = document.getElementById('tx-custom-date-fields');
-    if (customFields) customFields.hidden = (p !== 'custom');
-
+    updatePeriodUI('transactions', p);
     loadTransactionsView();
   });
 });
@@ -1637,33 +1645,101 @@ if (dom.formGoalSaving) {
    VIEW 4: REPORTS (Laporan & Copy-ready Text Export)
    ========================================================================== */
 
-let reportPeriod = 'month'; // 'month', 'lastmonth', '7days', 'today'
+let reportPeriod = 'today'; // Strict Rule: 1. Hari Ini, 2. 7 Hari, 3. Bulan Ini, 4. Bulan Lalu, 5. Custom. Default: today
+let reportCustomStart = '';
+let reportCustomEnd = '';
+
+/**
+ * Update active visual state for period filter chips
+ */
+function updatePeriodUI(viewName, activePeriod, customRangeLabel = null) {
+  const selector = viewName === 'reports' ? '[data-rep-period]' : '[data-tx-period]';
+  const attrName = viewName === 'reports' ? 'data-rep-period' : 'data-tx-period';
+
+  document.querySelectorAll(selector).forEach(btn => {
+    const p = btn.getAttribute(attrName);
+    const isAct = p === activePeriod;
+    btn.setAttribute('aria-pressed', isAct ? 'true' : 'false');
+    if (p === 'custom') {
+      const labelEl = btn.querySelector('.chip-label') || btn;
+      labelEl.textContent = (isAct && customRangeLabel) ? customRangeLabel : 'Custom';
+    }
+  });
+}
+
+/**
+ * Open Custom Date Range Modal
+ */
+function openCustomDateModal(targetView) {
+  if (!dom.modalCustomDate) return;
+  Validator.clearFormErrors(dom.formCustomDate);
+
+  const viewInput = document.getElementById('custom-date-target-view');
+  if (viewInput) viewInput.value = targetView;
+
+  const startInput = document.getElementById('custom-date-start');
+  const endInput = document.getElementById('custom-date-end');
+
+  const existingStart = targetView === 'reports' ? reportCustomStart : txFilterState.customStart;
+  const existingEnd = targetView === 'reports' ? reportCustomEnd : txFilterState.customEnd;
+
+  if (startInput) startInput.value = existingStart || DateUtil.todayString();
+  if (endInput) endInput.value = existingEnd || DateUtil.todayString();
+
+  openModal(dom.modalCustomDate);
+}
+
+// Custom Date Form Submit Listener with Strict Validation (Requirement 3)
+if (dom.formCustomDate) {
+  dom.formCustomDate.addEventListener('submit', (e) => {
+    e.preventDefault();
+    Validator.clearFormErrors(dom.formCustomDate);
+
+    const startInput = document.getElementById('custom-date-start');
+    const endInput = document.getElementById('custom-date-end');
+    const startVal = startInput?.value;
+    const endVal = endInput?.value;
+    const targetView = document.getElementById('custom-date-target-view')?.value || 'transactions';
+
+    // Requirement 3: Jika tanggal belum lengkap: "Tentukan tanggal mulai dan tanggal akhir."
+    if (!startVal || !endVal) {
+      const targetErr = !startVal ? startInput : endInput;
+      Validator.showFieldError(targetErr, 'Tentukan tanggal mulai dan tanggal akhir.');
+      return;
+    }
+
+    // Requirement 3: Tanggal mulai tidak boleh lebih besar dari tanggal akhir:
+    // "Tanggal mulai tidak boleh lebih besar dari tanggal akhir."
+    if (startVal > endVal) {
+      Validator.showFieldError(startInput, 'Tanggal mulai tidak boleh lebih besar dari tanggal akhir.');
+      return;
+    }
+
+    const rangeLabel = `${DateUtil.formatDate(startVal, false)} - ${DateUtil.formatDate(endVal)}`;
+
+    if (targetView === 'reports') {
+      reportPeriod = 'custom';
+      reportCustomStart = startVal;
+      reportCustomEnd = endVal;
+      updatePeriodUI('reports', 'custom', rangeLabel);
+      closeModal(dom.modalCustomDate);
+      loadReportsView();
+    } else {
+      txFilterState.period = 'custom';
+      txFilterState.customStart = startVal;
+      txFilterState.customEnd = endVal;
+      updatePeriodUI('transactions', 'custom', rangeLabel);
+      closeModal(dom.modalCustomDate);
+      loadTransactionsView();
+    }
+  });
+}
 
 async function loadReportsView() {
-  let startDate = null;
-  let endDate = null;
-  let periodLabel = 'Bulan Ini';
-
-  if (reportPeriod === 'month') {
-    const r = DateUtil.getCurrentMonthRange();
-    startDate = r.start.toISOString().split('T')[0];
-    endDate = r.end.toISOString().split('T')[0];
-    periodLabel = 'Bulan Ini (' + DateUtil.formatDate(r.start, false) + ' - ' + DateUtil.formatDate(r.end) + ')';
-  } else if (reportPeriod === 'lastmonth') {
-    const r = DateUtil.getLastMonthRange();
-    startDate = r.start.toISOString().split('T')[0];
-    endDate = r.end.toISOString().split('T')[0];
-    periodLabel = 'Bulan Lalu (' + DateUtil.formatDate(r.start, false) + ' - ' + DateUtil.formatDate(r.end) + ')';
-  } else if (reportPeriod === '7days') {
-    const r = DateUtil.getLast7DaysRange();
-    startDate = r.start.toISOString().split('T')[0];
-    endDate = r.end.toISOString().split('T')[0];
-    periodLabel = '7 Hari Terakhir';
-  } else if (reportPeriod === 'today') {
-    startDate = DateUtil.todayString();
-    endDate = DateUtil.todayString();
-    periodLabel = 'Hari Ini (' + DateUtil.formatDate(new Date()) + ')';
-  }
+  const range = DateUtil.getPeriodRange(reportPeriod, reportCustomStart, reportCustomEnd);
+  const startDate = range.startDate;
+  const endDate = range.endDate;
+  const periodLabel = range.label;
 
   const transactions = await TransactionService.getTransactions(currentUser.uid, { startDate, endDate });
   const reportData = ReportService.generateReport(transactions, cachedPundis, cachedCategories, periodLabel);
@@ -1746,14 +1822,20 @@ async function loadReportsView() {
       }
     };
   }
+
+  refreshIcons();
 }
 
-// Reports Period switcher
+// Reports Period switcher (Global rule order: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Custom)
 document.querySelectorAll('[data-rep-period]').forEach(chip => {
-  chip.addEventListener('click', (e) => {
-    document.querySelectorAll('[data-rep-period]').forEach(c => c.setAttribute('aria-pressed', 'false'));
-    chip.setAttribute('aria-pressed', 'true');
-    reportPeriod = chip.getAttribute('data-rep-period');
+  chip.addEventListener('click', () => {
+    const p = chip.getAttribute('data-rep-period');
+    if (p === 'custom') {
+      openCustomDateModal('reports');
+      return;
+    }
+    reportPeriod = p;
+    updatePeriodUI('reports', p);
     loadReportsView();
   });
 });

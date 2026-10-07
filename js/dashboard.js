@@ -15,10 +15,10 @@ export const DashboardManager = {
   async loadDashboard(userId, elements) {
     if (!userId || !elements) return;
 
-    // 1. Fetch current month range
+    // 1. Fetch current month range using local date conversion
     const { start, end } = DateUtil.getCurrentMonthRange();
-    const startStr = start.toISOString().split('T')[0];
-    const endStr = end.toISOString().split('T')[0];
+    const startStr = DateUtil.toLocalDateString(start);
+    const endStr = DateUtil.toLocalDateString(end);
 
     // 2. Fetch Pundis, Categories, and All Transactions in parallel (single query)
     const [pundis, categories, allRecentTransactions] = await Promise.all([

@@ -48,10 +48,10 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/variables.css?v=1.4.4">
-  <link rel="stylesheet" href="css/style.css?v=1.4.4">
-  <link rel="stylesheet" href="css/components.css?v=1.4.4">
-  <link rel="stylesheet" href="css/responsive.css?v=1.4.4">
+  <link rel="stylesheet" href="css/variables.css?v=1.5.0">
+  <link rel="stylesheet" href="css/style.css?v=1.5.0">
+  <link rel="stylesheet" href="css/components.css?v=1.5.0">
+  <link rel="stylesheet" href="css/responsive.css?v=1.5.0">
 
   <!-- Chart.js & Lucide Icons -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -250,32 +250,21 @@
           </div>
         </div>
 
-        <!-- Pundi Summary Card (Clean & Balanced: Total Saldo Dompet prominently on top, Saldo Tersedia & Total Pundi below) -->
-        <div class="card pundi-summary-card" id="pundi-overview-banner" style="margin-bottom: 20px; padding: 20px 22px; border: 1px solid var(--border-soft); border-radius: var(--radius-lg, 16px); background: var(--surface);">
-          <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid var(--border-soft);">
-            <div style="display: flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 13px; font-weight: 500; margin-bottom: 6px;">
-              <i data-lucide="wallet" style="width: 15px; height: 15px;"></i>
-              <span>Total Saldo Dompet</span>
-            </div>
-            <div id="pundi-total-balance" style="font-size: 26px; font-weight: 800; color: var(--text-1); letter-spacing: -0.02em;">Rp0</div>
+        <!-- Pundi Summary Card (Clean & Intuitive: Pemasukan, Pengeluaran, Total Saldo Pundi) -->
+        <dl class="summary-grid pundi-summary-grid" id="pundi-overview-banner" style="margin-bottom: 20px;">
+          <div class="summary-item">
+            <dt><i data-lucide="trending-up" class="icon text-income" style="width:15px;height:15px;"></i> Pemasukan</dt>
+            <dd id="pundi-summary-income" class="text-income">Rp0</dd>
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <span class="subtle small" style="display: flex; align-items: center; gap: 5px; color: var(--text-2); font-size: 12px; font-weight: 500;">
-                <i data-lucide="check-circle" style="width: 13px; height: 13px; color: var(--primary);"></i>
-                <span>Saldo Tersedia</span>
-              </span>
-              <strong id="pundi-available-balance" style="font-size: 17px; font-weight: 700; color: var(--primary);">Rp0</strong>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 4px;">
-              <span class="subtle small" style="display: flex; align-items: center; gap: 5px; color: var(--text-2); font-size: 12px; font-weight: 500;">
-                <i data-lucide="piggy-bank" style="width: 13px; height: 13px; color: var(--income, #10B981);"></i>
-                <span>Total Pundi</span>
-              </span>
-              <strong id="pundi-total-allocated" style="font-size: 17px; font-weight: 700; color: var(--income, #10B981);">Rp0</strong>
-            </div>
+          <div class="summary-item">
+            <dt><i data-lucide="trending-down" class="icon text-expense" style="width:15px;height:15px;"></i> Pengeluaran</dt>
+            <dd id="pundi-summary-expense">Rp0</dd>
           </div>
-        </div>
+          <div class="summary-item summary-item-wide">
+            <dt><i data-lucide="piggy-bank" class="icon" style="width:15px;height:15px;"></i> Total Saldo Pundi</dt>
+            <dd id="pundi-total-allocated">Rp0</dd>
+          </div>
+        </dl>
 
         <!-- Pundi Cards Grid -->
         <div class="pundi-grid" id="pundi-list-cards"></div>
@@ -314,13 +303,16 @@
           </div>
         </div>
 
-        <!-- Filter Chips: Period -->
-        <div class="chips" role="tablist" aria-label="Filter Periode">
-          <button type="button" class="chip" data-tx-period="month" aria-pressed="true">Bulan Ini</button>
+        <!-- Filter Chips: Period (Global Rule: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Custom) -->
+        <div class="chips period-chips" role="tablist" aria-label="Filter Periode Transaksi">
+          <button type="button" class="chip" data-tx-period="today" aria-pressed="true">Hari Ini</button>
           <button type="button" class="chip" data-tx-period="7days" aria-pressed="false">7 Hari</button>
-          <button type="button" class="chip" data-tx-period="today" aria-pressed="false">Hari Ini</button>
+          <button type="button" class="chip" data-tx-period="month" aria-pressed="false">Bulan Ini</button>
           <button type="button" class="chip" data-tx-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
-          <button type="button" class="chip" data-tx-period="custom" aria-pressed="false">Kustom</button>
+          <button type="button" class="chip" data-tx-period="custom" id="chip-tx-custom" aria-pressed="false">
+            <span class="chip-label">Custom</span>
+            <i data-lucide="calendar" class="icon" style="width:13px;height:13px;"></i>
+          </button>
         </div>
 
         <!-- Filter Segment: Type -->
@@ -390,14 +382,19 @@
           </div>
         </div>
 
-        <div class="chips" role="tablist">
-          <button type="button" class="chip" data-rep-period="month" aria-pressed="true">Bulan Ini</button>
-          <button type="button" class="chip" data-rep-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
+        <!-- Filter Chips: Period (Global Rule: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Custom) -->
+        <div class="chips period-chips" role="tablist" aria-label="Filter Periode Laporan">
+          <button type="button" class="chip" data-rep-period="today" aria-pressed="true">Hari Ini</button>
           <button type="button" class="chip" data-rep-period="7days" aria-pressed="false">7 Hari</button>
-          <button type="button" class="chip" data-rep-period="today" aria-pressed="false">Hari Ini</button>
+          <button type="button" class="chip" data-rep-period="month" aria-pressed="false">Bulan Ini</button>
+          <button type="button" class="chip" data-rep-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
+          <button type="button" class="chip" data-rep-period="custom" id="chip-rep-custom" aria-pressed="false">
+            <span class="chip-label">Custom</span>
+            <i data-lucide="calendar" class="icon" style="width:13px;height:13px;"></i>
+          </button>
         </div>
 
-        <div class="period-note" style="margin-top: 10px;" id="rep-period-title">Bulan Ini</div>
+        <div class="period-note" style="margin-top: 10px;" id="rep-period-title">Hari Ini</div>
 
         <dl class="summary-grid">
           <div class="summary-item">
@@ -870,6 +867,41 @@
           <div class="form-actions" style="margin-top: 16px;">
             <button type="button" class="btn btn-secondary" data-close-modal>Batal</button>
             <button type="submit" class="btn btn-primary">Alokasikan Saldo</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
+  <!-- MODAL: FILTER TANGGAL CUSTOM                                   -->
+  <!-- ============================================================== -->
+  <dialog id="modal-custom-date" class="modal">
+    <div class="modal-panel" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Rentang Tanggal Custom</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="form-custom-date" class="form" novalidate>
+          <input type="hidden" id="custom-date-target-view" value="">
+
+          <div class="field" id="field-custom-date-start">
+            <label for="custom-date-start">Tanggal Mulai</label>
+            <input type="date" class="input" id="custom-date-start" required>
+          </div>
+
+          <div class="field" id="field-custom-date-end">
+            <label for="custom-date-end">Tanggal Akhir</label>
+            <input type="date" class="input" id="custom-date-end" required>
+          </div>
+
+          <div class="form-actions" style="margin-top: 18px;">
+            <button type="button" class="btn btn-secondary" data-close-modal id="btn-cancel-custom-date">Batal</button>
+            <button type="submit" class="btn btn-primary" id="btn-apply-custom-date">Terapkan</button>
           </div>
         </form>
       </div>
