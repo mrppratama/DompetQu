@@ -1845,33 +1845,43 @@ function initProfileAndChangelog() {
   async function triggerInstallFlow(e) {
     if (e) e.stopPropagation();
     
-    // 1. If already standalone PWA mode
+    // Check if already standalone PWA mode
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                          window.navigator.standalone === true;
     if (isStandalone) {
-      showToast('Aplikasi DompetQu sudah terpasang dan sedang dibuka!', 'success');
+      showToast('Aplikasi DompetQu sudah terpasang di HP Anda!', 'success');
       return;
     }
 
-    // 2. If browser exposes getInstalledRelatedApps, check if already installed
-    if ('getInstalledRelatedApps' in navigator) {
-      try {
-        const related = await navigator.getInstalledRelatedApps();
-        if (related && related.length > 0) {
-          showToast('DompetQu sudah terpasang di HP Anda! Anda dapat langsung membukanya dari layar utama.', 'info', 5000);
-          return;
-        }
-      } catch (err) {}
+    // Check if deferred install prompt is available
+    let promptEvt = window.deferredInstallPrompt || deferredInstallPrompt;
+
+    // If not immediately available, wait briefly for browser event
+    if (!promptEvt) {
+      promptEvt = await new Promise((resolve) => {
+        let done = false;
+        const handler = (evt) => {
+          if (!done) {
+            done = true;
+            resolve(evt);
+          }
+        };
+        window.addEventListener('beforeinstallprompt', handler, { once: true });
+        setTimeout(() => {
+          if (!done) {
+            done = true;
+            resolve(window.deferredInstallPrompt || null);
+          }
+        }, 1000);
+      });
     }
 
-    // 3. If deferred prompt is captured, trigger native install prompt dialog
-    const promptEvt = window.deferredInstallPrompt || deferredInstallPrompt;
     if (promptEvt) {
       try {
         promptEvt.prompt();
         const choice = await promptEvt.userChoice;
         if (choice && choice.outcome === 'accepted') {
-          showToast('Menginstal DompetQu ke perangkat...', 'info');
+          showToast('Menginstal DompetQu...', 'success');
         }
         window.deferredInstallPrompt = null;
         deferredInstallPrompt = null;
@@ -1882,14 +1892,7 @@ function initProfileAndChangelog() {
       return;
     }
 
-    // 4. If prompt is not available, open visual guide modal
-    closeModal(dom.modalProfile || document.getElementById('modal-profile'));
-    const guideModal = document.getElementById('modal-install-guide');
-    if (guideModal) {
-      openModal(guideModal);
-    } else {
-      showToast('Buka menu browser (titik 3 di kanan atas Chrome), lalu pilih "Install aplikasi".', 'info', 4500);
-    }
+    showToast('Menyiapkan instalasi aplikasi di perangkat Anda...', 'info', 2500);
   }
 
   const btnInstall = document.getElementById('btn-install-app');

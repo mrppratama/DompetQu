@@ -3,7 +3,7 @@
  * Caches core app shell for fast startup and offline support.
  */
 
-const CACHE_NAME = 'dompetqu-v1.4.3';
+const CACHE_NAME = 'dompetqu-v1.4.4';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -11,6 +11,7 @@ const CORE_ASSETS = [
   './register.html',
   './forgot-password.html',
   './404.html',
+  './manifest.json',
   './manifest.webmanifest',
   './css/variables.css',
   './css/style.css',
