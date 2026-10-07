@@ -460,6 +460,34 @@ async function loadPundiView() {
   const active = cachedPundis.filter(p => !p.isArchived);
   const archived = cachedPundis.filter(p => p.isArchived);
 
+  // Compute Total Saldo, Total Pundi, and Saldo Tersedia for Pundi Overview
+  const allTx = (cachedTransactions && cachedTransactions.length > 0)
+    ? cachedTransactions
+    : await TransactionService.getTransactions(currentUser.uid);
+  let allIncome = 0;
+  let allExpense = 0;
+  allTx.forEach(t => {
+    const amt = Number(t.amount || 0);
+    if (t.type === 'INCOME') allIncome += amt;
+    else if (t.type === 'EXPENSE') allExpense += amt;
+  });
+
+  const settings = SettingsService.getSettings();
+  const initialBalance = Number(settings.initialBalance || 0);
+  const totalPundiBalance = active.reduce((sum, p) => sum + Number(p.balance || 0), 0);
+  const calculatedBalance = initialBalance + allIncome - allExpense;
+  const totalBalance = (allTx.length === 0 && totalPundiBalance > 0 && initialBalance === 0)
+    ? totalPundiBalance
+    : calculatedBalance;
+  const availableBalance = Math.max(0, totalBalance - totalPundiBalance);
+
+  const pundiTotalBalEl = document.getElementById('pundi-total-balance');
+  const pundiAllocatedEl = document.getElementById('pundi-total-allocated');
+  const pundiAvailableEl = document.getElementById('pundi-available-balance');
+  if (pundiTotalBalEl) pundiTotalBalEl.textContent = Currency.format(totalBalance);
+  if (pundiAllocatedEl) pundiAllocatedEl.textContent = Currency.format(totalPundiBalance);
+  if (pundiAvailableEl) pundiAvailableEl.textContent = Currency.format(availableBalance);
+
   if (active.length === 0) {
     pundiContainer.innerHTML = `
       <div class="card empty" style="grid-column: 1 / -1;">
@@ -654,9 +682,13 @@ if (dom.formPundi) {
     const icon = dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'wallet';
     const color = dom.formPundi.querySelector('input[name="pundi_color"]:checked')?.value || '#10B981';
 
-    const val = Validator.validatePundi({ name, monthlyBudget: budget });
-    if (!val.isValid) {
-      showToast(val.firstError, 'error');
+    Validator.clearFormErrors(dom.formPundi);
+    if (!name || !name.trim()) {
+      Validator.showFieldError(document.getElementById('pundi-name'), 'Nama Pundi wajib diisi.');
+      return;
+    }
+    if (!budget || isNaN(budget) || budget <= 0) {
+      Validator.showFieldError(document.getElementById('pundi-budget'), 'Anggaran bulanan wajib diisi.');
       return;
     }
 
@@ -1062,23 +1094,49 @@ if (dom.formTx) {
     const sourcePundi = cachedPundis.find(p => p.id === pundiId);
     const sourceBalance = sourcePundi ? Number(sourcePundi.balance || 0) : 0;
 
-    // Validation
-    const val = Validator.validateTransaction({
-      type,
-      amount,
-      pundiId,
-      destinationPundiId,
-      categoryId,
-      date,
-      sourcePundiBalance: id ? undefined : sourceBalance // check strict balance on new transactions
-    });
+    Validator.clearFormErrors(dom.formTx);
 
-    if (!val.isValid) {
-      if (val.firstError === 'Saldo Pundi tidak mencukupi.' || val.firstError === 'Saldo Pundi tidak mencukupi untuk transfer.') {
-        showToast(`Saldo Pundi "${sourcePundi?.name || 'terpilih'}" tidak mencukupi (${Currency.format(sourceBalance)}). Tambahkan Pemasukan terlebih dahulu ke Pundi ini atau atur Saldo Pundi.`, 'error');
-      } else {
-        showToast(val.firstError, 'error');
+    // Prioritized field validation with custom DompetQu UI error states
+    if (!amount || isNaN(amount) || amount <= 0) {
+      Validator.showFieldError(document.getElementById('tx-amount'), 'Nominal wajib diisi.');
+      return;
+    }
+
+    if (!pundiId) {
+      const pundiTrigger = document.getElementById('cs-trigger-tx-pundi') || document.getElementById('tx-pundi');
+      Validator.showFieldError(pundiTrigger, 'Pundi wajib dipilih.');
+      return;
+    }
+
+    if (type === 'TRANSFER') {
+      const destTrigger = document.getElementById('cs-trigger-tx-dest-pundi') || document.getElementById('tx-dest-pundi');
+      if (!destinationPundiId) {
+        Validator.showFieldError(destTrigger, 'Pundi tujuan transfer wajib dipilih.');
+        return;
       }
+      if (pundiId === destinationPundiId) {
+        Validator.showFieldError(destTrigger, 'Pundi tujuan tidak boleh sama dengan pundi sumber.');
+        return;
+      }
+    } else {
+      // EXPENSE or INCOME
+      if (!categoryId) {
+        const catTrigger = document.getElementById('cs-trigger-tx-category') || document.getElementById('tx-category');
+        Validator.showFieldError(catTrigger, 'Kategori wajib dipilih.');
+        return;
+      }
+    }
+
+    if (!date) {
+      Validator.showFieldError(document.getElementById('tx-date'), 'Tanggal transaksi wajib diisi.');
+      return;
+    }
+
+    // Strict balance check on new EXPENSE or TRANSFER
+    if (!id && (type === 'EXPENSE' || type === 'TRANSFER') && sourceBalance < amount) {
+      const errText = type === 'TRANSFER' ? 'Saldo Pundi tidak mencukupi untuk transfer.' : 'Saldo Pundi tidak mencukupi.';
+      Validator.showFieldError(document.getElementById('tx-amount'), errText);
+      showToast(`Saldo Pundi "${sourcePundi?.name || 'terpilih'}" tidak mencukupi (${Currency.format(sourceBalance)}).`, 'error');
       return;
     }
 
@@ -1296,9 +1354,13 @@ if (dom.formGoal) {
     const deadline = document.getElementById('goal-deadline').value;
     const note = document.getElementById('goal-note').value;
 
-    const val = Validator.validateGoal({ name, targetAmount: target, deadline });
-    if (!val.isValid) {
-      showToast(val.firstError, 'error');
+    Validator.clearFormErrors(dom.formGoal);
+    if (!name || !name.trim()) {
+      Validator.showFieldError(document.getElementById('goal-name'), 'Nama target wajib diisi.');
+      return;
+    }
+    if (!target || isNaN(target) || target <= 0) {
+      Validator.showFieldError(document.getElementById('goal-target'), 'Target nominal wajib diisi.');
       return;
     }
 
@@ -1349,8 +1411,9 @@ if (dom.formGoalSaving) {
     const id = document.getElementById('saving-goal-id').value;
     const addAmt = Currency.parse(document.getElementById('saving-amount').value);
 
-    if (addAmt <= 0) {
-      showToast('Nominal tabungan harus lebih dari Rp0.', 'error');
+    Validator.clearFormErrors(dom.formGoalSaving);
+    if (!addAmt || isNaN(addAmt) || addAmt <= 0) {
+      Validator.showFieldError(document.getElementById('saving-amount'), 'Nominal tabungan wajib diisi.');
       return;
     }
 
@@ -1622,11 +1685,11 @@ function initCategoryListeners() {
   if (dom.formCategory) {
     dom.formCategory.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const nameInput = document.getElementById('new-cat-name');
-      const name = nameInput ? nameInput.value.trim() : '';
-      const type = document.getElementById('new-cat-type')?.value || activeCatModalType;
-
-      if (!name) return;
+      Validator.clearFormErrors(dom.formCategory);
+      if (!name) {
+        Validator.showFieldError(nameInput, 'Nama kategori wajib diisi.');
+        return;
+      }
 
       const btnSubmit = dom.formCategory.querySelector('button[type="submit"]');
       if (btnSubmit) btnSubmit.disabled = true;
@@ -1832,14 +1895,29 @@ function initProfileAndChangelog() {
   const savedTheme = localStorage.getItem('dompetqu_theme') || 'dark';
   applyThemeUI(savedTheme, false);
 
-  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  const toggleThemeGlobal = () => {
+    const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+    const newTheme = isLight ? 'dark' : 'light';
+    applyThemeUI(newTheme, true);
+    showToast(`Mode ${newTheme === 'light' ? 'Terang' : 'Gelap'} diaktifkan.`, 'info', 1800);
+  };
+
+  const btnThemeToggle = document.getElementById('btn-theme-toggle');
+  if (btnThemeToggle) {
+    btnThemeToggle.addEventListener('click', (e) => {
       e.preventDefault();
-      const selected = btn.getAttribute('data-theme-val');
-      applyThemeUI(selected, true);
-      showToast(`Mode ${selected === 'light' ? 'Terang' : 'Gelap'} diaktifkan.`, 'info', 1800);
+      toggleThemeGlobal();
     });
-  });
+  }
+
+  const btnSidebarTheme = document.getElementById('btn-sidebar-theme');
+  if (btnSidebarTheme) {
+    btnSidebarTheme.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleThemeGlobal();
+    });
+  }
 
   // Install App Action (both button and card click)
   async function triggerInstallFlow(e) {
@@ -1940,38 +2018,25 @@ function applyThemeUI(theme, save = false) {
     } catch (e) {}
   }
 
-  // Update theme toggle buttons in modal
-  document.querySelectorAll('.theme-toggle-btn').forEach(btn => {
-    btn.classList.toggle('is-active', btn.getAttribute('data-theme-val') === theme);
-  });
-
-  // Update text and icon in profile menu
-  const desc = document.getElementById('profile-theme-desc');
-  const icon = document.getElementById('theme-lucide-icon');
-  const iconWrap = document.getElementById('profile-theme-icon');
-  if (desc) {
-    desc.textContent = theme === 'light' ? 'Mode Terang aktif' : 'Mode Gelap aktif';
+  // Update Header Theme button icon and accessibility labels
+  const headerIcon = document.getElementById('header-theme-icon');
+  const btnHeader = document.getElementById('btn-theme-toggle');
+  if (headerIcon) {
+    headerIcon.setAttribute('data-lucide', theme === 'light' ? 'sun' : 'moon');
   }
-  if (iconWrap && icon) {
-    if (theme === 'light') {
-      iconWrap.style.background = 'rgba(245, 158, 11, 0.15)';
-      iconWrap.style.color = '#F59E0B';
-      icon.setAttribute('data-lucide', 'sun');
-    } else {
-      iconWrap.style.background = 'rgba(110, 159, 214, 0.15)';
-      iconWrap.style.color = '#6E9FD6';
-      icon.setAttribute('data-lucide', 'moon');
-    }
+  if (btnHeader) {
+    btnHeader.setAttribute('title', theme === 'light' ? 'Mode Terang (Klik untuk ganti ke Gelap)' : 'Mode Gelap (Klik untuk ganti ke Terang)');
+    btnHeader.setAttribute('aria-label', theme === 'light' ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang');
   }
 
-  // Update in settings view if present
-  const stLabel = document.getElementById('settings-theme-label');
-  const stBadge = document.getElementById('settings-theme-badge');
-  if (stLabel) {
-    stLabel.textContent = theme === 'light' ? 'Calm Light Finance (Emerald Clean)' : 'Calm Dark Finance (Emerald Vibrant)';
+  // Update Desktop Sidebar Theme button icon
+  const sidebarIcon = document.getElementById('sidebar-theme-icon');
+  const btnSidebar = document.getElementById('btn-sidebar-theme');
+  if (sidebarIcon) {
+    sidebarIcon.setAttribute('data-lucide', theme === 'light' ? 'sun' : 'moon');
   }
-  if (stBadge) {
-    stBadge.textContent = theme === 'light' ? 'Terang' : 'Gelap';
+  if (btnSidebar) {
+    btnSidebar.setAttribute('title', theme === 'light' ? 'Ganti ke Mode Gelap' : 'Ganti ke Mode Terang');
   }
 
   refreshIcons();

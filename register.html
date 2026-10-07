@@ -28,7 +28,7 @@
 
     <div id="auth-alert" class="form-error" style="margin-bottom: 16px;" hidden></div>
 
-    <form id="form-register" class="form">
+    <form id="form-register" class="form" novalidate>
       <div class="field">
         <label for="reg-name">Nama Panggilan</label>
         <input type="text" id="reg-name" class="input" placeholder="Contoh: Pratama" required autocomplete="name">
@@ -78,9 +78,28 @@
       const email = document.getElementById('reg-email').value.trim();
       const pass = document.getElementById('reg-password').value;
 
+      if (!name) {
+        alertEl.textContent = 'Nama panggilan wajib diisi.';
+        alertEl.hidden = false;
+        document.getElementById('reg-name').focus();
+        return;
+      }
+      if (!email) {
+        alertEl.textContent = 'Email wajib diisi.';
+        alertEl.hidden = false;
+        document.getElementById('reg-email').focus();
+        return;
+      }
+      if (!pass) {
+        alertEl.textContent = 'Kata sandi wajib diisi.';
+        alertEl.hidden = false;
+        document.getElementById('reg-password').focus();
+        return;
+      }
       if (pass.length < 6) {
         alertEl.textContent = 'Kata sandi minimal 6 karakter.';
         alertEl.hidden = false;
+        document.getElementById('reg-password').focus();
         return;
       }
 

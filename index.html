@@ -48,10 +48,10 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/variables.css?v=1.4.3">
-  <link rel="stylesheet" href="css/style.css?v=1.4.3">
-  <link rel="stylesheet" href="css/components.css?v=1.4.3">
-  <link rel="stylesheet" href="css/responsive.css?v=1.4.3">
+  <link rel="stylesheet" href="css/variables.css?v=1.4.4">
+  <link rel="stylesheet" href="css/style.css?v=1.4.4">
+  <link rel="stylesheet" href="css/components.css?v=1.4.4">
+  <link rel="stylesheet" href="css/responsive.css?v=1.4.4">
 
   <!-- Chart.js & Lucide Icons -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -112,7 +112,10 @@
           <span class="sidebar-user-name user-display-name">Pengguna</span>
           <span class="sidebar-user-email user-display-email">user@email.com</span>
         </div>
-        <i data-lucide="settings" class="icon" style="width:16px;height:16px;color:var(--text-3);margin-left:auto;"></i>
+        <button type="button" class="btn-sidebar-theme" id="btn-sidebar-theme" aria-label="Ganti Mode Tampilan" title="Ganti Mode Tampilan">
+          <i data-lucide="moon" class="icon" id="sidebar-theme-icon" style="width:15px;height:15px;"></i>
+        </button>
+        <i data-lucide="settings" class="icon" style="width:16px;height:16px;color:var(--text-3);"></i>
       </div>
     </aside>
 
@@ -129,6 +132,9 @@
             <i data-lucide="wifi-off" class="icon" style="width:13px;height:13px;"></i>
             <span>Offline</span>
           </span>
+          <button type="button" class="theme-toggle-header-btn" id="btn-theme-toggle" aria-label="Ganti Mode Tampilan" title="Ganti Mode Tampilan">
+            <i data-lucide="moon" class="icon" id="header-theme-icon" style="width:18px;height:18px;"></i>
+          </button>
           <button type="button" class="profile-avatar-btn" id="btn-topbar-profile" aria-label="Menu Profil & Pengaturan">
             <span class="profile-avatar-initial" id="topbar-avatar-initial">P</span>
           </button>
@@ -155,11 +161,22 @@
             <div class="dash-balance-label">
               <i data-lucide="wallet" class="icon" style="width: 14px; height: 14px;"></i>
               <span>Total Saldo Dompet</span>
+              <div class="dash-balance-info" tabindex="0" role="tooltip" title="Saldo Awal + Pemasukan - Pengeluaran.&#10;Termasuk saldo yang telah dialokasikan ke Pundi." aria-label="Informasi Saldo">
+                <i data-lucide="info" class="icon" style="width: 13px; height: 13px;"></i>
+                <div class="dash-balance-popover">
+                  <div class="dash-balance-popover-title">Total Saldo Dompet</div>
+                  <div class="dash-balance-popover-text">Saldo Awal + Pemasukan - Pengeluaran.</div>
+                  <div class="dash-balance-popover-sub">Termasuk saldo yang telah dialokasikan ke Pundi.</div>
+                </div>
+              </div>
             </div>
             <div class="amount-hero" id="dash-total-balance">Rp0</div>
+            <div class="dash-balance-subhint">
+              <span>Saldo Awal + Pemasukan - Pengeluaran (termasuk saldo Pundi)</span>
+            </div>
           </div>
 
-          <!-- Cards rapih dan elegan persis seperti di Halaman Laporan (Gambar 2) -->
+          <!-- Cards rapih dan elegan: Hanya 2 card (Pemasukan & Pengeluaran) sehingga total menjadi 3 card bersama Total Saldo -->
           <dl class="summary-grid" style="margin-top: 18px;">
             <div class="summary-item" id="widget-income">
               <dt><i data-lucide="trending-up" class="icon text-income" style="width:15px;height:15px;"></i> Pemasukan</dt>
@@ -168,10 +185,6 @@
             <div class="summary-item" id="widget-expense">
               <dt><i data-lucide="trending-down" class="icon text-expense" style="width:15px;height:15px;"></i> Pengeluaran</dt>
               <dd id="dash-month-expense">Rp0</dd>
-            </div>
-            <div class="summary-item summary-item-wide" id="widget-net">
-              <dt><i data-lucide="wallet" class="icon" style="width:15px;height:15px;"></i> Saldo Bersih</dt>
-              <dd id="dash-net-cash" class="text-income">Rp0</dd>
             </div>
           </dl>
           <p class="period-note">Akumulasi pengeluaran dan pemasukan bulan ini</p>
@@ -230,6 +243,29 @@
               <i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i>
               <span>Buat Pundi</span>
             </button>
+          </div>
+        <!-- Pundi Allocation Overview (Total Saldo = Saldo Tersedia + Total Pundi) -->
+        <div class="card pundi-overview-banner" id="pundi-overview-banner" style="margin-bottom: 16px; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 14px 24px; justify-content: space-between; align-items: center; border: 1px solid var(--border-soft);">
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span class="subtle small" style="display: flex; align-items: center; gap: 5px;">
+              <i data-lucide="wallet" style="width: 13px; height: 13px;"></i>
+              <span>Total Saldo Dompet</span>
+            </span>
+            <strong id="pundi-total-balance" style="font-size: 16px; font-weight: 700;">Rp0</strong>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span class="subtle small" style="display: flex; align-items: center; gap: 5px;">
+              <i data-lucide="pie-chart" style="width: 13px; height: 13px;"></i>
+              <span>Alokasi di Pundi</span>
+            </span>
+            <strong id="pundi-total-allocated" class="text-income" style="font-size: 16px; font-weight: 700;">Rp0</strong>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 3px;">
+            <span class="subtle small" style="display: flex; align-items: center; gap: 5px;">
+              <i data-lucide="check-circle" style="width: 13px; height: 13px;"></i>
+              <span>Saldo Tersedia</span>
+            </span>
+            <strong id="pundi-available-balance" style="font-size: 16px; font-weight: 700; color: var(--primary);">Rp0</strong>
           </div>
         </div>
 
@@ -519,17 +555,10 @@
           </div>
           <div class="setting-row">
             <div class="setting-text">
-              <span class="setting-title">Tema Tampilan</span>
-              <span class="setting-desc">Calm Dark Finance (Emerald Vibrant)</span>
-            </div>
-            <span class="badge">Aktif</span>
-          </div>
-          <div class="setting-row">
-            <div class="setting-text">
               <span class="setting-title">Versi PWA</span>
-              <span class="setting-desc">DompetQu v1.4.1</span>
+              <span class="setting-desc">DompetQu v1.4.4</span>
             </div>
-            <span class="badge">v1.4.1 Standalone</span>
+            <span class="badge">v1.4.4 Standalone</span>
           </div>
         </div>
 
@@ -578,7 +607,7 @@
       </div>
 
       <div class="modal-body">
-        <form id="form-tx" class="form">
+        <form id="form-tx" class="form" novalidate>
           <input type="hidden" id="tx-id">
 
           <!-- Type Segmented Control -->
@@ -690,7 +719,7 @@
       </div>
 
       <div class="modal-body">
-        <form id="form-pundi" class="form">
+        <form id="form-pundi" class="form" novalidate>
           <input type="hidden" id="pundi-id">
 
           <div class="field">
@@ -757,7 +786,7 @@
       </div>
 
       <div class="modal-body">
-        <form id="form-goal" class="form">
+        <form id="form-goal" class="form" novalidate>
           <input type="hidden" id="goal-id">
 
           <div class="field">
@@ -814,7 +843,7 @@
       </div>
 
       <div class="modal-body">
-        <form id="form-goal-saving" class="form">
+        <form id="form-goal-saving" class="form" novalidate>
           <input type="hidden" id="saving-goal-id">
           <p class="modal-text">Menambah progres ke target: <strong id="saving-goal-name">Target</strong></p>
 
@@ -857,7 +886,7 @@
         </div>
 
         <!-- Add Category Form -->
-        <form id="form-category" class="form" style="margin-bottom: 20px;">
+        <form id="form-category" class="form" novalidate style="margin-bottom: 20px;">
           <input type="hidden" id="new-cat-type" value="EXPENSE">
           <label for="new-cat-name" class="small" style="font-weight: 500; display: block; margin-bottom: 6px;">Tambah Kategori Baru</label>
           <div style="display: flex; gap: 8px;">
@@ -949,27 +978,6 @@
             <i data-lucide="chevron-right" class="icon" style="width: 16px; height: 16px; color: var(--text-3);"></i>
           </button>
 
-          <!-- Pilihan Tema: Mode Gelap / Terang -->
-          <div class="profile-menu-item profile-theme-card" id="profile-theme-row">
-            <div class="profile-menu-item-icon" id="profile-theme-icon" style="background: rgba(110, 159, 214, 0.15); color: #6E9FD6;">
-              <i data-lucide="moon" class="icon" style="width: 18px; height: 18px;" id="theme-lucide-icon"></i>
-            </div>
-            <div class="profile-menu-item-text">
-              <span class="title">Mode Tampilan</span>
-              <span class="desc" id="profile-theme-desc">Mode Gelap aktif</span>
-            </div>
-            <div class="theme-switch-group">
-              <button type="button" class="theme-toggle-btn is-active" data-theme-val="dark" title="Mode Gelap" aria-label="Mode Gelap">
-                <i data-lucide="moon" style="width: 13px; height: 13px;"></i>
-                <span>Gelap</span>
-              </button>
-              <button type="button" class="theme-toggle-btn" data-theme-val="light" title="Mode Terang" aria-label="Mode Terang">
-                <i data-lucide="sun" style="width: 13px; height: 13px;"></i>
-                <span>Terang</span>
-              </button>
-            </div>
-          </div>
-
           <!-- Install Aplikasi (PWA) -->
           <div class="profile-menu-item profile-install-card" id="profile-install-row" role="button" tabindex="0">
             <div class="profile-menu-item-icon" style="background: rgba(214, 168, 95, 0.15); color: #D6A85F;">
@@ -992,9 +1000,9 @@
             </div>
             <div class="profile-menu-item-text">
               <span class="title">Versi Aplikasi</span>
-              <span class="desc">DompetQu v1.4.1 &bull; Klik untuk riwayat pembaruan</span>
+              <span class="desc">DompetQu v1.4.4 &bull; Klik untuk riwayat pembaruan</span>
             </div>
-            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.4.1</span>
+            <span class="badge" style="font-size: 11px; background: var(--surface-3); color: var(--primary);">v1.4.4</span>
           </button>
         </div>
 
@@ -1023,12 +1031,29 @@
       </div>
 
       <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding-right: 4px;">
+        <!-- Version 1.4.4 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.4.4</span>
+              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
+            </div>
+            <span class="changelog-date">7 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Revisi Card Dashboard (3 Card):</strong> Menghapus card "Saldo Bersih" yang redundant. Dashboard kini fokus pada 3 indikator utama: Total Saldo Dompet, Pemasukan, dan Pengeluaran, lengkap dengan info tooltip rumus saldo e-wallet.</li>
+            <li><strong>Presisi Logic Pundi & Saldo Tersedia:</strong> Alokasi ke Pundi tidak mengubah Total Saldo, dan pengeluaran dari Pundi tidak menyebabkan double counting. Total Saldo = Saldo Tersedia + Total Pundi.</li>
+            <li><strong>Bug Fix Hapus Transaksi Transfer:</strong> Transaksi Transfer kini dapat dihapus dengan sukses tanpa error transaksi Firestore (read-before-write), mengembalikan saldo sumber dan tujuan secara tepat.</li>
+            <li><strong>Custom Alert & Validasi Form:</strong> Mengganti alert dan popup bawaan browser dengan pesan validasi berbahasa Indonesia dan error state visual bergaya DompetQu.</li>
+            <li><strong>Kontrol Tema di Header:</strong> Toggle Light / Dark Mode kini berada tepat di header dashboard di sebelah profil untuk akses cepat global seketika. Opsi tema duplikat di menu profil & pengaturan telah dibersihkan.</li>
+          </ul>
+        </div>
+
         <!-- Version 1.4.1 -->
         <div class="changelog-card">
           <div class="changelog-head">
             <div class="changelog-version">
               <span>v1.4.1</span>
-              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
             </div>
             <span class="changelog-date">7 Oktober 2026</span>
           </div>

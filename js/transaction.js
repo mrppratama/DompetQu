@@ -231,10 +231,23 @@ export const TransactionService = {
       if (!txSnap.exists()) return;
       const tx = txSnap.data();
 
-      const sourceRef = doc(db, 'users', userId, 'pundi', tx.pundiId);
-      const sourceSnap = await t.get(sourceRef);
+      // ALL READS MUST PRECEDE ALL WRITES in Firestore transactions
+      let sourceRef = null;
+      let sourceSnap = null;
+      if (tx.pundiId) {
+        sourceRef = doc(db, 'users', userId, 'pundi', tx.pundiId);
+        sourceSnap = await t.get(sourceRef);
+      }
 
-      if (sourceSnap.exists()) {
+      let destRef = null;
+      let destSnap = null;
+      if (tx.type === 'TRANSFER' && tx.destinationPundiId) {
+        destRef = doc(db, 'users', userId, 'pundi', tx.destinationPundiId);
+        destSnap = await t.get(destRef);
+      }
+
+      // EXECUTE ALL WRITES AFTER ALL READS ARE COMPLETE
+      if (sourceRef && sourceSnap && sourceSnap.exists()) {
         const curSource = Number(sourceSnap.data().balance || 0);
         if (tx.type === 'EXPENSE') {
           t.update(sourceRef, { balance: curSource + tx.amount, updatedAt: serverTimestamp() });
@@ -245,13 +258,9 @@ export const TransactionService = {
         }
       }
 
-      if (tx.type === 'TRANSFER' && tx.destinationPundiId) {
-        const destRef = doc(db, 'users', userId, 'pundi', tx.destinationPundiId);
-        const destSnap = await t.get(destRef);
-        if (destSnap.exists()) {
-          const curDest = Number(destSnap.data().balance || 0);
-          t.update(destRef, { balance: Math.max(0, curDest - tx.amount), updatedAt: serverTimestamp() });
-        }
+      if (destRef && destSnap && destSnap.exists()) {
+        const curDest = Number(destSnap.data().balance || 0);
+        t.update(destRef, { balance: Math.max(0, curDest - tx.amount), updatedAt: serverTimestamp() });
       }
 
       t.delete(txDocRef);

@@ -31,8 +31,22 @@ export const DashboardManager = {
     const settings = SettingsService.getSettings();
     const activeWidgets = settings.widgets || {};
 
-    // 3. Compute Total Balance across all active Pundis
-    const totalBalance = pundis.reduce((sum, p) => sum + Number(p.balance || 0), 0);
+    // 3. Compute Total Balance: Total Saldo Dompet = Saldo Awal + Total Pemasukan - Total Pengeluaran
+    let allIncome = 0;
+    let allExpense = 0;
+    allRecentTransactions.forEach(t => {
+      const amt = Number(t.amount || 0);
+      if (t.type === 'INCOME') allIncome += amt;
+      else if (t.type === 'EXPENSE') allExpense += amt;
+    });
+
+    const initialBalance = Number(settings.initialBalance || 0);
+    const totalPundiBalance = pundis.reduce((sum, p) => sum + Number(p.balance || 0), 0);
+    const calculatedBalance = initialBalance + allIncome - allExpense;
+    // Fallback if no transactions yet but initial pundis exist
+    const totalBalance = (allRecentTransactions.length === 0 && totalPundiBalance > 0 && initialBalance === 0)
+      ? totalPundiBalance
+      : calculatedBalance;
 
     // 4. Compute Month Incomes and Expenses
     let monthIncome = 0;
@@ -53,9 +67,7 @@ export const DashboardManager = {
       }
     });
 
-    const netCashFlow = monthIncome - monthExpense;
-
-    // --- Render Balance & Stat Row ---
+    // --- Render Balance & Stat Row (Total Saldo, Pemasukan, Pengeluaran) ---
     if (elements.totalBalanceEl) {
       elements.totalBalanceEl.textContent = Currency.format(totalBalance);
     }
@@ -66,14 +78,13 @@ export const DashboardManager = {
       elements.monthExpenseEl.textContent = Currency.format(monthExpense);
     }
     if (elements.netCashFlowEl) {
-      elements.netCashFlowEl.textContent = Currency.format(netCashFlow);
-      elements.netCashFlowEl.className = netCashFlow >= 0 ? 'text-income' : 'text-expense';
+      elements.netCashFlowEl.textContent = '';
     }
 
     // Toggle widgets visibility based on user preferences
     if (elements.widgetIncome) elements.widgetIncome.hidden = !activeWidgets.income;
     if (elements.widgetExpense) elements.widgetExpense.hidden = !activeWidgets.expense;
-    if (elements.widgetNet) elements.widgetNet.hidden = !activeWidgets.netCashFlow;
+    if (elements.widgetNet) elements.widgetNet.hidden = true;
 
     // --- Hide standalone warnings container (moved inside cards per user request) ---
     if (elements.warningsContainer) {

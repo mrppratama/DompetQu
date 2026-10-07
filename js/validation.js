@@ -4,6 +4,52 @@
  */
 
 export const Validator = {
+  /**
+   * Render custom inline validation error under field according to DompetQu design system
+   */
+  showFieldError(targetEl, message) {
+    if (!targetEl) return;
+    const field = targetEl.closest('.field') || targetEl.closest('.input-prefix') || targetEl.parentElement;
+    if (!field) return;
+
+    field.classList.add('has-error');
+    let errorEl = field.querySelector('.field-error-msg');
+    if (!errorEl) {
+      errorEl = document.createElement('div');
+      errorEl.className = 'field-error-msg';
+      field.appendChild(errorEl);
+    }
+    errorEl.innerHTML = `<i data-lucide="alert-circle" style="width:13px;height:13px;flex-shrink:0;"></i><span>${message}</span>`;
+    if (window.lucide) window.lucide.createIcons();
+
+    // Clear error as soon as user inputs or changes
+    const clearHandler = () => {
+      this.clearFieldError(targetEl);
+      targetEl.removeEventListener('input', clearHandler);
+      targetEl.removeEventListener('change', clearHandler);
+    };
+    targetEl.addEventListener('input', clearHandler);
+    targetEl.addEventListener('change', clearHandler);
+
+    try {
+      if (typeof targetEl.focus === 'function') targetEl.focus();
+    } catch (e) {}
+  },
+
+  clearFieldError(targetEl) {
+    if (!targetEl) return;
+    const field = targetEl.closest('.field') || targetEl.closest('.input-prefix') || targetEl.parentElement;
+    if (!field) return;
+    field.classList.remove('has-error');
+    const errorEl = field.querySelector('.field-error-msg');
+    if (errorEl) errorEl.remove();
+  },
+
+  clearFormErrors(formEl) {
+    if (!formEl) return;
+    formEl.querySelectorAll('.field.has-error').forEach(f => f.classList.remove('has-error'));
+    formEl.querySelectorAll('.field-error-msg').forEach(msg => msg.remove());
+  },
   validateTransaction({ type, amount, pundiId, destinationPundiId, categoryId, date, sourcePundiBalance }) {
     const errors = [];
 

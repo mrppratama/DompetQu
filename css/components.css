@@ -1734,5 +1734,202 @@ button.setting-row:hover {
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
 
+/* ==========================================================================
+   CUSTOM FORM VALIDATION UI (Clean & Non-native)
+   ========================================================================== */
+
+.field.has-error .input,
+.field.has-error .input-prefix,
+.field.has-error .custom-select-trigger {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 1px var(--danger), 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+.field-error-msg {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--danger);
+  margin-top: 5px;
+  animation: fieldErrorIn 0.18s ease-out;
+}
+
+.field-error-msg i,
+.field-error-msg svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+@keyframes fieldErrorIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==========================================================================
+   HEADER THEME TOGGLE BUTTON & DESKTOP TOGGLE
+   ========================================================================== */
+
+.theme-toggle-header-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+
+.theme-toggle-header-btn:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+[data-theme="light"] .theme-toggle-header-btn {
+  background: #F8FAFC;
+  border-color: #E2E8F0;
+  color: #D97706;
+}
+
+[data-theme="light"] .theme-toggle-header-btn:hover {
+  background: #F1F5F9;
+  color: #B45309;
+}
+
+.btn-sidebar-theme {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--text-2);
+  cursor: pointer;
+  transition: all var(--dur) var(--ease);
+  margin-left: auto;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.btn-sidebar-theme:hover {
+  color: var(--text);
+  background: var(--surface-3);
+}
+
+[data-theme="light"] .btn-sidebar-theme {
+  color: #D97706;
+}
+
+/* ==========================================================================
+   DASHBOARD TOTAL BALANCE INFO TOOLTIP & POPOVER
+   ========================================================================== */
+
+.dash-balance-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: var(--text-3);
+  cursor: pointer;
+  position: relative;
+  transition: all var(--dur) var(--ease);
+  outline: none;
+}
+
+.dash-balance-info:hover,
+.dash-balance-info:focus-visible {
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.dash-balance-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 270px;
+  padding: 10px 12px;
+  background: var(--surface-raised, var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2);
+  color: var(--text);
+  font-size: 11.5px;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 400;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+}
+
+[data-theme="light"] .dash-balance-popover {
+  background: #FFFFFF;
+  border-color: #E2E8F0;
+  box-shadow: 0 10px 25px -3px rgba(15, 23, 42, 0.15), 0 4px 6px -2px rgba(15, 23, 42, 0.08);
+}
+
+.dash-balance-popover-title {
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 2px;
+  font-size: 11.5px;
+}
+
+.dash-balance-popover-text {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.dash-balance-popover-sub {
+  color: var(--text-2);
+  margin-top: 3px;
+  font-size: 11px;
+}
+
+.dash-balance-info:hover .dash-balance-popover,
+.dash-balance-info:focus .dash-balance-popover,
+.dash-balance-info:focus-visible .dash-balance-popover,
+.dash-balance-info.is-active .dash-balance-popover {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.dash-balance-subhint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  position: relative;
+  z-index: 1;
+}
+
+
 
 
