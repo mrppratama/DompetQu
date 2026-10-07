@@ -234,10 +234,13 @@ input[type="search"]::-webkit-search-cancel-button {
   display: flex;
   align-items: center;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .input-password-wrapper .input {
+  width: 100%;
   padding-right: 44px;
+  box-sizing: border-box;
 }
 
 .btn-toggle-password {
@@ -247,6 +250,8 @@ input[type="search"]::-webkit-search-cancel-button {
   transform: translateY(-50%);
   background: transparent;
   border: none;
+  outline: none;
+  box-shadow: none;
   padding: 8px;
   cursor: pointer;
   color: var(--text-2);
@@ -254,6 +259,7 @@ input[type="search"]::-webkit-search-cancel-button {
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-sm);
+  z-index: 2;
   transition: color var(--dur) var(--ease), background var(--dur) var(--ease);
 }
 
@@ -400,9 +406,13 @@ input[type="search"]::-webkit-search-cancel-button {
 }
 
 .segmented input:checked + span,
-.segmented button[aria-pressed="true"] {
-  background: var(--surface-3);
-  color: var(--text);
+.segmented button[aria-pressed="true"],
+.segmented button.is-active,
+.segmented .seg-btn.is-active {
+  background: var(--primary) !important;
+  color: var(--on-primary, #FFFFFF) !important;
+  font-weight: 700 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
 }
 
 .segmented input:focus-visible + span {
@@ -1009,11 +1019,13 @@ dialog.modal::backdrop {
   margin-top: 16px;
 }
 
-/* ---------- Pundi ---------- */
+/* ---------- Pundi & Kantong ---------- */
 .pundi-grid,
 .goal-grid {
   display: grid;
   gap: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .pundi-card,
@@ -1021,17 +1033,50 @@ dialog.modal::backdrop {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .card-head {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
+  width: 100%;
 }
 
 .card-head-title {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+}
+
+.card-head-title h3,
+.pundi-card .card-head-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+.card-head-title p,
+.pundi-card .card-head-title p {
+  margin: 2px 0 0;
+  color: var(--text-2);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .card-head-title h3 {
@@ -1681,11 +1726,13 @@ button.setting-row:hover {
 
 /* ---------- Changelog Styles ---------- */
 .changelog-card {
-  padding: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  margin: 0 auto 14px auto;
 }
 
 .changelog-head {

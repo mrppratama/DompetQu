@@ -232,7 +232,7 @@ export const DateUtil = {
    * 4. Bulan Lalu: tanggal 1 sampai hari terakhir bulan sebelumnya
    * 5. Custom: customStart s.d. customEnd
    */
-  getPeriodRange(periodKey = 'month', customStart = null, customEnd = null) {
+  getPeriodRange(periodKey = 'today', customStart = null, customEnd = null) {
     const now = new Date();
     const todayStr = this.toLocalDateString(now);
 
@@ -326,21 +326,20 @@ export const DateUtil = {
       };
     }
 
-    // Default fallback: 'month'
-    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+    // Default fallback: 'today'
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
     const end = new Date(now);
     end.setHours(23, 59, 59, 999);
-    const startStr = this.toLocalDateString(start);
-    const endStr = this.toLocalDateString(end);
     return {
-      period: 'month',
-      startDate: startStr,
-      endDate: endStr,
+      period: 'today',
+      startDate: todayStr,
+      endDate: todayStr,
       startObj: start,
       endObj: end,
-      label: `Bulan Ini (${this.formatDate(startStr, false)} - ${this.formatDate(endStr)})`,
-      shortLabel: 'Bulan Ini',
-      displayRange: `${this.formatDate(startStr, false)} - ${this.formatDate(endStr)}`
+      label: `Hari Ini (${this.formatDate(todayStr)})`,
+      shortLabel: 'Hari Ini',
+      displayRange: this.formatDate(todayStr)
     };
   },
 
@@ -420,13 +419,14 @@ export function generateId(prefix = 'id') {
 }
 
 /**
- * Standard list of persistent Lucide icons for Pundi-Pundi
+ * Standard list of persistent Lucide icons for Kantong Uang (Food & Daily life themes)
  */
 export const AVAILABLE_PUNDI_ICONS = [
+  { id: 'utensils', label: 'Makanan & Kuliner' },
+  { id: 'coffee', label: 'Makan & Kafe' },
   { id: 'wallet', label: 'Dompet' },
   { id: 'vault', label: 'Brankas' },
   { id: 'shopping-bag', label: 'Belanja' },
-  { id: 'coffee', label: 'Makan & Kafe' },
   { id: 'home', label: 'Rumah & Tempat Tinggal' },
   { id: 'car', label: 'Transportasi' },
   { id: 'heart-pulse', label: 'Kesehatan' },
@@ -438,12 +438,12 @@ export const AVAILABLE_PUNDI_ICONS = [
 ];
 
 /**
- * Safely resolve a Pundi icon ID with guaranteed fallback
+ * Safely resolve a Kantong icon ID with guaranteed fallback to utensils
  */
 export function resolvePundiIcon(iconName) {
-  if (!iconName || typeof iconName !== 'string') return 'wallet';
+  if (!iconName || typeof iconName !== 'string') return 'utensils';
   const clean = iconName.trim().toLowerCase();
-  if (clean === 'piggy-bank') return 'vault';
+  if (clean === 'piggy-bank' || clean === 'pig') return 'utensils';
   const exists = AVAILABLE_PUNDI_ICONS.some(item => item.id === clean);
-  return exists ? clean : 'wallet';
+  return exists ? clean : 'utensils';
 }

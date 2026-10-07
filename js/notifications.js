@@ -138,7 +138,7 @@ export function evaluateBudgetWarnings(pundiList, expenseByPundiMap) {
         usage,
         type: 'exceeded',
         level: 'danger',
-        message: `Budget Pundi ${pundi.name} sudah mencapai batas (${usage}%).`
+        message: `Budget Kantong ${pundi.name} sudah mencapai batas (${usage}%).`
       });
     } else if (usage >= 90) {
       warnings.push({
@@ -147,7 +147,7 @@ export function evaluateBudgetWarnings(pundiList, expenseByPundiMap) {
         usage,
         type: 'critical',
         level: 'danger-soft',
-        message: `Budget Pundi ${pundi.name} hampir habis (${usage}%).`
+        message: `Budget Kantong ${pundi.name} hampir habis (${usage}%).`
       });
     } else if (usage >= 75) {
       warnings.push({
@@ -156,7 +156,7 @@ export function evaluateBudgetWarnings(pundiList, expenseByPundiMap) {
         usage,
         type: 'warning',
         level: 'warning',
-        message: `Penggunaan budget Pundi ${pundi.name} sudah mencapai ${usage}%.`
+        message: `Penggunaan budget Kantong ${pundi.name} sudah mencapai ${usage}%.`
       });
     }
   }

@@ -77,9 +77,9 @@ export const PundiService = {
   },
 
   /**
-   * Create new Pundi (Starts at Rp0; name, icon, optional description)
+   * Create new Kantong (Starts at Rp0; name, icon, optional description)
    */
-  async createPundi(userId, { name, description = '', color = '#10B981', icon = 'wallet' }) {
+  async createPundi(userId, { name, description = '', color = '#10B981', icon = 'utensils' }) {
     if (!userId) throw new Error('User belum login');
 
     const payload = {
@@ -182,9 +182,9 @@ export const PundiService = {
     if (!isConfigured || !db) {
       const list = await this.getPundis(userId, true);
       const pundi = list.find(p => p.id === pundiId);
-      if (!pundi) throw new Error('Pundi tidak ditemukan.');
+      if (!pundi) throw new Error('Kantong tidak ditemukan.');
       const curBal = Number(pundi.balance || 0);
-      if (curBal < numAmount) throw new Error('Saldo Pundi tidak mencukupi.');
+      if (curBal < numAmount) throw new Error('Saldo Kantong tidak mencukupi.');
       pundi.balance = curBal - numAmount;
       pundi.updatedAt = new Date().toISOString();
       localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(list));
@@ -194,9 +194,9 @@ export const PundiService = {
     const pundiRef = doc(db, 'users', userId, 'pundi', pundiId);
     await runTransaction(db, async (t) => {
       const snap = await t.get(pundiRef);
-      if (!snap.exists()) throw new Error('Pundi tidak ditemukan.');
+      if (!snap.exists()) throw new Error('Kantong tidak ditemukan.');
       const curBal = Number(snap.data().balance || 0);
-      if (curBal < numAmount) throw new Error('Saldo Pundi tidak mencukupi.');
+      if (curBal < numAmount) throw new Error('Saldo Kantong tidak mencukupi.');
       t.update(pundiRef, {
         balance: curBal - numAmount,
         updatedAt: serverTimestamp()
@@ -215,7 +215,7 @@ export const PundiService = {
     if (!isConfigured || !db) {
       const list = await this.getPundis(userId, true);
       const pundi = list.find(p => p.id === pundiId);
-      if (!pundi) throw new Error('Pundi tidak ditemukan.');
+      if (!pundi) throw new Error('Kantong tidak ditemukan.');
       pundi.balance = Number(pundi.balance || 0) + numAmount;
       pundi.updatedAt = new Date().toISOString();
       localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(list));
@@ -225,7 +225,7 @@ export const PundiService = {
     const pundiRef = doc(db, 'users', userId, 'pundi', pundiId);
     await runTransaction(db, async (t) => {
       const snap = await t.get(pundiRef);
-      if (!snap.exists()) throw new Error('Pundi tidak ditemukan.');
+      if (!snap.exists()) throw new Error('Kantong tidak ditemukan.');
       const curBal = Number(snap.data().balance || 0);
       t.update(pundiRef, {
         balance: curBal + numAmount,

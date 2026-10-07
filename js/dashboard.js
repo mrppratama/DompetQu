@@ -96,16 +96,16 @@ export const DashboardManager = {
       }
     }
 
-    // --- Render Pundi-Pundi Mini Cards (Pure Envelope concept: No budget, no progress bar) ---
+    // --- Render Kantong Uang Mini Cards (Pure Envelope concept: No budget, no progress bar) ---
     if (elements.pundiListContainer && activeWidgets.pundiList) {
       elements.pundiListContainer.closest('.section').hidden = false;
       if (pundis.length === 0) {
         elements.pundiListContainer.innerHTML = `
           <div class="card empty">
-            <div class="empty-icon"><i data-lucide="wallet" style="width:24px;height:24px;"></i></div>
-            <p class="empty-title">Belum ada Pundi</p>
-            <p class="empty-text">Buat Pundi untuk membagi uang Anda ke pos-pos kebutuhan.</p>
-            <button type="button" class="btn btn-secondary btn-sm" id="btn-create-first-pundi">Buat Pundi</button>
+            <div class="empty-icon"><i data-lucide="utensils" style="width:24px;height:24px;"></i></div>
+            <p class="empty-title">Belum ada Kantong</p>
+            <p class="empty-text">Buat Kantong untuk membagi uang Anda ke pos-pos kebutuhan.</p>
+            <button type="button" class="btn btn-secondary btn-sm btn-open-pundi-modal" id="btn-create-first-pundi">Buat Kantong</button>
           </div>
         `;
       } else {
@@ -118,7 +118,7 @@ export const DashboardManager = {
                 </div>
                 <div class="pundi-main" style="min-width:0;">
                   <div class="pundi-row-name" style="font-weight: 600; font-size: 14px;">${escapeHtml(p.name)}</div>
-                  <div class="pundi-row-sub" style="font-size: 12px; color: var(--text-2);">${escapeHtml(p.description || 'Alokasi Pundi')}</div>
+                  <div class="pundi-row-sub" style="font-size: 12px; color: var(--text-2);">${escapeHtml(p.description || 'Kantong Uang')}</div>
                 </div>
               </div>
               <div class="pundi-row-amount" style="font-weight: 700; font-size: 14px; color: var(--text-1); flex-shrink: 0;">
@@ -182,7 +182,7 @@ export const DashboardManager = {
             <div class="empty-icon"><i data-lucide="arrow-left-right" style="width:24px;height:24px;"></i></div>
             <p class="empty-title">Belum ada transaksi</p>
             <p class="empty-text">Catat pengeluaran dan pemasukan pertama Anda.</p>
-            <button type="button" class="btn btn-primary btn-sm" id="btn-create-first-tx">Tambah Transaksi</button>
+            <button type="button" class="btn btn-primary btn-sm btn-open-tx-modal" id="btn-create-first-tx">Tambah Transaksi</button>
           </div>
         `;
       } else {
@@ -196,7 +196,7 @@ export const DashboardManager = {
             <ul class="list">
               ${recent.map(t => {
                 const cat = catMap[t.categoryId] || { name: 'Kategori', icon: 'tag' };
-                const pundi = t.pundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.pundiId] || { name: 'Pundi' });
+                const pundi = t.pundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.pundiId] || { name: 'Kantong' });
                 const signed = Currency.formatSigned(t.type, t.amount);
 
                 let iconName = cat.icon || 'arrow-left-right';

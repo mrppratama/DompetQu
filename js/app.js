@@ -364,7 +364,7 @@ export function navigateTo(viewName) {
   // Update Topbar title
   const titles = {
     dashboard: 'DompetQu',
-    pundi: 'Pundi-Pundi',
+    pundi: 'Kantong Uang',
     transactions: 'Transaksi',
     goals: 'Target Keuangan',
     reports: 'Laporan Keuangan',
@@ -499,14 +499,14 @@ async function loadPundiView() {
   if (active.length === 0) {
     pundiContainer.innerHTML = `
       <div class="card empty" style="grid-column: 1 / -1;">
-        <div class="empty-icon"><i data-lucide="wallet" style="width:24px;height:24px;"></i></div>
-        <p class="empty-title">Belum ada Pundi aktif</p>
-        <p class="empty-text">Buat Pundi untuk membagi uang Anda ke pos-pos kebutuhan.</p>
-        <button type="button" class="btn btn-primary btn-sm btn-open-pundi-modal" id="btn-add-pundi-empty">Buat Pundi Pertama</button>
+        <div class="empty-icon"><i data-lucide="utensils" style="width:24px;height:24px;"></i></div>
+        <p class="empty-title">Belum ada Kantong aktif</p>
+        <p class="empty-text">Buat Kantong untuk memisahkan dan mengalokasikan uang yang benar-benar tersedia.</p>
+        <button type="button" class="btn btn-primary btn-sm btn-open-pundi-modal" id="btn-add-pundi-empty">Buat Kantong Pertama</button>
       </div>
     `;
   } else {
-    // Render active Pundi cards with breakdown (Terpakai, Sisa, Total, %) & horizontal chart
+    // Render active Kantong cards with responsive constraints (Requirement 6) and breakdown
     pundiContainer.innerHTML = active.map(p => {
       const pundiIcon = resolvePundiIcon(p.icon);
       const curBal = Number(p.balance || 0);
@@ -518,35 +518,35 @@ async function loadPundiView() {
       const leftPct = totalAllocated > 0 ? Math.max(0, 100 - spentPct) : (curBal > 0 ? 100 : 0);
 
       return `
-        <div class="card pundi-card" data-pundi-id="${p.id}" style="display: flex; flex-direction: column; justify-content: space-between;">
-          <div>
-            <div class="card-head" style="align-items: flex-start; margin-bottom: 12px;">
+        <div class="card pundi-card" data-pundi-id="${p.id}" style="display: flex; flex-direction: column; justify-content: space-between; min-width: 0; max-width: 100%; box-sizing: border-box; overflow: hidden;">
+          <div style="min-width: 0;">
+            <div class="card-head" style="align-items: flex-start; margin-bottom: 12px; min-width: 0;">
               <div class="avatar" style="background:${p.color || '#10B981'}25; color:${p.color || '#10B981'}; flex-shrink: 0;">
                 <i data-lucide="${escapeHtml(pundiIcon)}" style="width:20px;height:20px;"></i>
               </div>
-              <div class="card-head-title" style="flex: 1; min-width: 0; padding: 0 4px;">
-                <h3 style="margin: 0; font-size: 16px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.name)}</h3>
-                <p style="margin: 2px 0 0; color: var(--text-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.description || 'Alokasi Pundi')}</p>
+              <div class="card-head-title" style="flex: 1; min-width: 0; padding: 0 6px; overflow: hidden;">
+                <h3 class="pundi-card-title" title="${escapeHtml(p.name)}" style="margin: 0; font-size: 15px; font-weight: 700; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; word-break: break-word; overflow-wrap: anywhere;">${escapeHtml(p.name)}</h3>
+                <p class="pundi-card-desc" style="margin: 3px 0 0; color: var(--text-2); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.description || 'Kantong Uang')}</p>
               </div>
               <div class="row-actions" style="flex-shrink: 0;">
-                <button type="button" class="icon-btn icon-btn-sm btn-edit-pundi" data-pundi-id="${p.id}" aria-label="Edit Pundi" title="Edit Pundi">
+                <button type="button" class="icon-btn icon-btn-sm btn-edit-pundi" data-pundi-id="${p.id}" aria-label="Edit Kantong" title="Edit Kantong">
                   <i data-lucide="pencil" style="width:15px;height:15px;"></i>
                 </button>
-                <button type="button" class="icon-btn icon-btn-sm btn-archive-pundi" data-pundi-id="${p.id}" aria-label="Arsipkan Pundi" title="Arsipkan Pundi">
+                <button type="button" class="icon-btn icon-btn-sm btn-archive-pundi" data-pundi-id="${p.id}" aria-label="Arsipkan Kantong" title="Arsipkan Kantong">
                   <i data-lucide="archive" style="width:15px;height:15px;"></i>
                 </button>
               </div>
             </div>
 
             <div class="kv" style="margin-top: 10px; margin-bottom: 12px;">
-              <span class="kv-label" style="font-size: 12px; color: var(--text-2);">Sisa Saldo Pundi</span>
+              <span class="kv-label" style="font-size: 12px; color: var(--text-2);">Saldo Kantong</span>
               <span class="kv-value" style="font-size: 20px; font-weight: 800; color: var(--text-1);">${Currency.format(curBal)}</span>
             </div>
 
             <!-- Breakdown & Chart Panjang Pemakaian vs Sisa -->
-            <div class="pundi-breakdown" style="background: var(--surface-2); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-soft);">
+            <div class="pundi-breakdown" style="background: var(--surface-2); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-soft); min-width: 0;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 12px; color: var(--text-2); font-weight: 500;">Alokasi Keseluruhan</span>
+                <span style="font-size: 12px; color: var(--text-2); font-weight: 500;">Alokasi Kumulatif</span>
                 <span style="font-size: 12px; font-weight: 700; color: var(--text-1);">${Currency.format(totalAllocated)}</span>
               </div>
 
@@ -586,7 +586,7 @@ async function loadPundiView() {
     }).join('');
   }
 
-  // Render archived pundis with [ Pulihkan ] [ Hapus ]
+  // Render archived Kantong with [ Pulihkan ] [ Hapus ] (Requirement 12: Delete only on archived)
   if (archivedContainer) {
     const archSection = document.getElementById('archived-pundi-section');
     if (archived.length === 0) {
@@ -636,7 +636,7 @@ function openPundiModal(pundiToEdit = null) {
   Validator.clearFormErrors(dom.formPundi);
 
   if (pundiToEdit) {
-    if (titleEl) titleEl.textContent = 'Edit Pundi';
+    if (titleEl) titleEl.textContent = 'Edit Kantong';
     idInput.value = pundiToEdit.id;
     nameInput.value = pundiToEdit.name || '';
     descInput.value = pundiToEdit.description || '';
@@ -651,12 +651,12 @@ function openPundiModal(pundiToEdit = null) {
     const colorRadio = dom.formPundi.querySelector(`input[name="pundi_color"][value="${safeColor}"]`);
     if (colorRadio) colorRadio.checked = true;
   } else {
-    if (titleEl) titleEl.textContent = 'Buat Pundi Baru';
+    if (titleEl) titleEl.textContent = 'Buat Kantong Baru';
     idInput.value = '';
     nameInput.value = '';
     descInput.value = '';
 
-    const defaultIcon = dom.formPundi.querySelector('input[name="pundi_icon"][value="wallet"]');
+    const defaultIcon = dom.formPundi.querySelector('input[name="pundi_icon"][value="utensils"]') || dom.formPundi.querySelector('input[name="pundi_icon"]');
     if (defaultIcon) defaultIcon.checked = true;
 
     const defaultColor = dom.formPundi.querySelector('input[name="pundi_color"][value="#10B981"]');
@@ -667,7 +667,7 @@ function openPundiModal(pundiToEdit = null) {
   refreshIcons();
 }
 
-// Pundi Form submit (Starts at Rp0; no budget fields)
+// Kantong Form submit (Starts at Rp0; no budget fields)
 if (dom.formPundi) {
   dom.formPundi.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -675,12 +675,12 @@ if (dom.formPundi) {
     const id = document.getElementById('pundi-id').value;
     const name = document.getElementById('pundi-name').value;
     const desc = document.getElementById('pundi-desc').value;
-    const icon = resolvePundiIcon(dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'wallet');
+    const icon = resolvePundiIcon(dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'utensils');
     const color = dom.formPundi.querySelector('input[name="pundi_color"]:checked')?.value || '#10B981';
 
     Validator.clearFormErrors(dom.formPundi);
     if (!name || !name.trim()) {
-      Validator.showFieldError(document.getElementById('pundi-name'), 'Nama Pundi wajib diisi.');
+      Validator.showFieldError(document.getElementById('pundi-name'), 'Nama Kantong wajib diisi.');
       return;
     }
 
@@ -693,7 +693,7 @@ if (dom.formPundi) {
           icon,
           color
         });
-        showToast('Pundi berhasil diperbarui.', 'success');
+        showToast('Kantong berhasil diperbarui.', 'success');
       } else {
         await PundiService.createPundi(currentUser.uid, {
           name,
@@ -701,7 +701,7 @@ if (dom.formPundi) {
           icon,
           color
         });
-        showToast('Pundi baru berhasil dibuat.', 'success');
+        showToast('Kantong baru berhasil dibuat.', 'success');
       }
       closeModal(dom.modalPundi);
       await loadPundiView();
@@ -715,7 +715,7 @@ if (dom.formPundi) {
 }
 
 /**
- * Open Modal to Return Balance from Pundi to Saldo Tersedia
+ * Open Modal to Return Balance from Kantong to Saldo Tersedia
  */
 function openReturnPundiModal(pundiItem) {
   if (!dom.modalPundiReturn || !pundiItem) return;
@@ -740,7 +740,7 @@ function openReturnPundiModal(pundiItem) {
   refreshIcons();
 }
 
-// Return Pundi Balance Submit Listener
+// Return Kantong Balance Submit Listener
 if (dom.formPundiReturn) {
   dom.formPundiReturn.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -756,7 +756,7 @@ if (dom.formPundiReturn) {
       return;
     }
     if (amountVal > Number(pundi.balance || 0)) {
-      Validator.showFieldError(document.getElementById('return-pundi-amount'), `Nominal melebihi saldo Pundi (${Currency.format(pundi.balance || 0)}).`);
+      Validator.showFieldError(document.getElementById('return-pundi-amount'), `Nominal melebihi saldo Kantong (${Currency.format(pundi.balance || 0)}).`);
       return;
     }
 
@@ -776,7 +776,7 @@ if (dom.formPundiReturn) {
 }
 
 /**
- * Open Modal to Allocate Saldo Tersedia to Pundi
+ * Open Modal to Allocate Saldo Tersedia to Kantong
  */
 async function openAllocateModal() {
   if (!dom.modalPundiAllocate) return;
@@ -807,7 +807,7 @@ async function openAllocateModal() {
   refreshIcons();
 }
 
-// Allocate to Pundi Submit Listener
+// Allocate to Kantong Submit Listener
 if (dom.formPundiAllocate) {
   dom.formPundiAllocate.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -818,7 +818,7 @@ if (dom.formPundiAllocate) {
     Validator.clearFormErrors(dom.formPundiAllocate);
     if (!pundiId) {
       const trigger = document.getElementById('cs-trigger-allocate-pundi-id') || document.getElementById('allocate-pundi-id');
-      Validator.showFieldError(trigger, 'Pilih Pundi tujuan alokasi.');
+      Validator.showFieldError(trigger, 'Pilih Kantong tujuan alokasi.');
       return;
     }
     if (!amountVal || isNaN(amountVal) || amountVal <= 0) {
@@ -850,7 +850,7 @@ if (dom.formPundiAllocate) {
     btnSubmit.disabled = true;
     try {
       await PundiService.allocateFromAvailable(currentUser.uid, pundiId, amountVal);
-      showToast(`Berhasil mengalokasikan ${Currency.format(amountVal)} ke Pundi.`, 'success');
+      showToast(`Berhasil mengalokasikan ${Currency.format(amountVal)} ke Kantong.`, 'success');
       closeModal(dom.modalPundiAllocate);
       invalidateTransactionsCache();
       await loadPundiView();
@@ -863,9 +863,27 @@ if (dom.formPundiAllocate) {
   });
 }
 
-// Global Click Event Delegation for Pundi actions & Buttons (ensures 100% reliable trigger)
+// Global Click Event Delegation for Kantong actions, Transaction buttons & Menus
 document.addEventListener('click', async (e) => {
-  // 1. Open Pundi Create Modal
+  // 0. Open Transaction Modal (Requirement 19: Dashboard empty state, sidebar, fab)
+  const openTxBtn = e.target.closest('.btn-open-tx-modal, #btn-create-first-tx, .bnav-fab');
+  if (openTxBtn) {
+    e.preventDefault();
+    openTxModal();
+    return;
+  }
+
+  // 0b. Open Goals from Profile (Requirement 5)
+  const profileGoalsBtn = e.target.closest('#profile-btn-goals');
+  if (profileGoalsBtn) {
+    e.preventDefault();
+    if (dom.modalProfile) closeModal(dom.modalProfile);
+    window.location.hash = '#goals';
+    switchView('goals');
+    return;
+  }
+
+  // 1. Open Kantong Create Modal
   const openPundiBtn = e.target.closest('.btn-open-pundi-modal, #btn-add-pundi-empty, #btn-create-first-pundi');
   if (openPundiBtn) {
     e.preventDefault();
@@ -881,7 +899,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // 3. Edit Pundi
+  // 3. Edit Kantong
   const editBtn = e.target.closest('.btn-edit-pundi');
   if (editBtn) {
     e.preventDefault();
@@ -891,7 +909,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // 4. Archive Pundi
+  // 4. Archive Kantong
   const archBtn = e.target.closest('.btn-archive-pundi');
   if (archBtn) {
     e.preventDefault();
@@ -900,14 +918,14 @@ document.addEventListener('click', async (e) => {
     if (!item) return;
 
     showConfirm({
-      title: 'Arsipkan Pundi',
-      message: `Arsipkan Pundi "${item.name}"?`,
-      subtext: 'Pundi ini tidak akan muncul saat alokasi baru, tetapi riwayat transaksi tetap tersimpan aman.',
+      title: 'Arsipkan Kantong',
+      message: `Arsipkan Kantong "${item.name}"?`,
+      subtext: 'Kantong ini tidak akan muncul saat alokasi baru, tetapi riwayat transaksi tetap tersimpan aman.',
       actionLabel: 'Arsipkan',
       isDanger: false,
       onConfirm: async () => {
         await PundiService.setArchived(currentUser.uid, id, true);
-        showToast(`Pundi "${item.name}" berhasil diarsipkan.`, 'info');
+        showToast(`Kantong "${item.name}" berhasil diarsipkan.`, 'info');
         await loadPundiView();
         await refreshBaselineData();
       }
@@ -915,20 +933,20 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // 5. Restore / Unarchive Pundi
+  // 5. Restore / Unarchive Kantong
   const unarchBtn = e.target.closest('.btn-unarchive-pundi');
   if (unarchBtn) {
     e.preventDefault();
     const id = unarchBtn.getAttribute('data-pundi-id');
     const item = cachedPundis.find(p => p.id === id);
     await PundiService.setArchived(currentUser.uid, id, false);
-    showToast(`Pundi "${item ? item.name : ''}" berhasil dipulihkan.`, 'success');
+    showToast(`Kantong "${item ? item.name : ''}" berhasil dipulihkan.`, 'success');
     await loadPundiView();
     await refreshBaselineData();
     return;
   }
 
-  // 6. Delete Pundi (Requirement 17: Only on Archived, Rp0 required)
+  // 6. Delete Kantong (Requirement 12: Only on Archived, Rp0 required)
   const delBtn = e.target.closest('.btn-delete-pundi');
   if (delBtn) {
     e.preventDefault();
@@ -941,9 +959,9 @@ document.addEventListener('click', async (e) => {
     // If balance > 0, cannot delete
     if (currentBalance > 0) {
       showConfirm({
-        title: 'Tidak Dapat Menghapus Pundi',
-        message: `Pundi masih memiliki saldo ${Currency.format(currentBalance)}.`,
-        subtext: 'Kembalikan saldo ke Saldo Tersedia sebelum menghapus Pundi.',
+        title: 'Tidak Dapat Menghapus Kantong',
+        message: `Kantong masih memiliki saldo ${Currency.format(currentBalance)}.`,
+        subtext: 'Kembalikan saldo ke Saldo Tersedia sebelum menghapus Kantong.',
         actionLabel: 'Kembalikan Saldo',
         isDanger: false,
         onConfirm: async () => {
@@ -955,14 +973,14 @@ document.addEventListener('click', async (e) => {
 
     // If balance == 0, allow permanent deletion
     showConfirm({
-      title: 'Hapus Pundi?',
-      message: `Apakah Anda yakin ingin menghapus Pundi "${item.name}"?`,
-      subtext: 'Pundi yang diarsipkan dengan saldo Rp0 akan dihapus permanen. Riwayat transaksi historis tetap aman.',
+      title: 'Hapus Kantong?',
+      message: `Apakah Anda yakin ingin menghapus Kantong "${item.name}"?`,
+      subtext: 'Kantong yang diarsipkan dengan saldo Rp0 akan dihapus permanen. Riwayat transaksi historis tetap aman.',
       actionLabel: 'Hapus',
       isDanger: true,
       onConfirm: async () => {
         await PundiService.deletePundi(currentUser.uid, id);
-        showToast(`Pundi "${item.name}" berhasil dihapus.`, 'info');
+        showToast(`Kantong "${item.name}" berhasil dihapus.`, 'info');
         await loadPundiView();
         await refreshBaselineData();
       }
@@ -970,7 +988,7 @@ document.addEventListener('click', async (e) => {
     return;
   }
 
-  // 7. Return Pundi
+  // 7. Return Kantong
   const returnBtn = e.target.closest('.btn-return-pundi');
   if (returnBtn) {
     e.preventDefault();
@@ -986,7 +1004,7 @@ document.addEventListener('click', async (e) => {
    ========================================================================== */
 
 let txFilterState = {
-  period: 'month', // Order: 7 Hari, Bulan Ini (Default), Bulan Lalu, Custom
+  period: 'today', // Standard Order: Hari Ini (Default), 7 Hari, Bulan Ini, Bulan Lalu, Custom
   type: '',        // '', 'EXPENSE', 'INCOME', 'TRANSFER'
   pundiId: '',
   categoryId: '',
@@ -1084,8 +1102,8 @@ async function loadTransactionsView() {
           <ul class="list">
             ${list.map(t => {
               const cat = catMap[t.categoryId] || { name: 'Kategori', icon: 'tag' };
-              const pundi = t.pundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.pundiId] || { name: 'Pundi' });
-              const destPundi = t.destinationPundiId ? (t.destinationPundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.destinationPundiId] || { name: 'Pundi' })) : null;
+              const pundi = t.pundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.pundiId] || { name: 'Kantong' });
+              const destPundi = t.destinationPundiId ? (t.destinationPundiId === 'MAIN_WALLET' ? { name: 'Saldo Tersedia' } : (pundiMap[t.destinationPundiId] || { name: 'Kantong' })) : null;
 
               let iconName = cat.icon || 'arrow-left-right';
               let subtitle = `${escapeHtml(pundi.name)}`;
@@ -1232,6 +1250,83 @@ function openTxModal(txToEdit = null, defaultType = 'EXPENSE') {
   openModal(dom.modalTx);
 }
 
+function resetIncomeAllocations() {
+  const container = document.getElementById('tx-income-allocations-list');
+  const summaryEl = document.getElementById('tx-income-alloc-summary');
+  if (container) container.innerHTML = '';
+  if (summaryEl) summaryEl.hidden = true;
+}
+
+function updateIncomeAllocSummary() {
+  const list = document.getElementById('tx-income-allocations-list');
+  const summaryEl = document.getElementById('tx-income-alloc-summary');
+  const totalEl = document.getElementById('tx-income-alloc-total');
+  const unallocEl = document.getElementById('tx-income-alloc-unallocated');
+  const txAmount = Currency.parse(document.getElementById('tx-amount')?.value || '0');
+
+  if (!list || !summaryEl) return;
+  const rows = list.querySelectorAll('.tx-alloc-row');
+  if (rows.length === 0) {
+    summaryEl.hidden = true;
+    return;
+  }
+  summaryEl.hidden = false;
+
+  let totalAlloc = 0;
+  rows.forEach(r => {
+    const amt = Currency.parse(r.querySelector('.tx-alloc-amount')?.value || '0');
+    totalAlloc += amt;
+  });
+
+  const unallocated = Math.max(0, txAmount - totalAlloc);
+  if (totalEl) totalEl.textContent = Currency.format(totalAlloc);
+  if (unallocEl) unallocEl.textContent = Currency.format(unallocated);
+}
+
+function addIncomeAllocRow(selectedPundiId = '', initialAmount = 0) {
+  const list = document.getElementById('tx-income-allocations-list');
+  if (!list) return;
+
+  const active = cachedPundis.filter(p => !p.isArchived);
+  if (active.length === 0) {
+    showToast('Belum ada Kantong aktif untuk dialokasikan.', 'info');
+    return;
+  }
+
+  const row = document.createElement('div');
+  row.className = 'tx-alloc-row';
+  row.style.cssText = 'display: flex; gap: 6px; align-items: center; width: 100%;';
+
+  const selectOptions = active.map(p => `<option value="${p.id}" ${p.id === selectedPundiId ? 'selected' : ''}>${escapeHtml(p.name)} (${Currency.format(p.balance || 0)})</option>`).join('');
+
+  row.innerHTML = `
+    <select class="input input-sm tx-alloc-pundi" style="flex: 1; min-width: 120px; font-size: 13px; height: 36px; padding: 0 8px;">
+      ${selectOptions}
+    </select>
+    <div class="input-prefix" style="flex: 1; min-width: 110px; height: 36px;">
+      <span style="font-size: 12px; padding: 0 6px;">Rp</span>
+      <input type="text" inputmode="numeric" class="input input-sm input-amount tx-alloc-amount" placeholder="0" value="${initialAmount ? Currency.formatNumber(initialAmount) : ''}" style="height: 36px; font-size: 13px; padding-left: 28px;">
+    </div>
+    <button type="button" class="icon-btn icon-btn-sm btn-remove-alloc-row" aria-label="Hapus Baris Alokasi" style="color: var(--danger); width: 32px; height: 32px; flex-shrink: 0;">
+      <i data-lucide="x" style="width: 14px; height: 14px;"></i>
+    </button>
+  `;
+
+  list.appendChild(row);
+
+  const amtInput = row.querySelector('.tx-alloc-amount');
+  Currency.attachFormatter(amtInput);
+  amtInput.addEventListener('input', updateIncomeAllocSummary);
+
+  row.querySelector('.btn-remove-alloc-row').addEventListener('click', () => {
+    row.remove();
+    updateIncomeAllocSummary();
+  });
+
+  refreshIcons();
+  updateIncomeAllocSummary();
+}
+
 function updateTxPundiHint() {
   const pundiSelect = document.getElementById('tx-pundi');
   const infoEl = document.getElementById('tx-pundi-info');
@@ -1269,11 +1364,11 @@ function updateTxPundiHint() {
 
   // EXPENSE or TRANSFER
   if (bal <= 0) {
-    infoEl.innerHTML = `<span style="color:var(--warning); font-size:12px; font-weight:500;">⚠️ Saldo Pundi saat ini Rp0. Catat Pemasukan terlebih dahulu atau atur Saldo Pundi.</span>`;
+    infoEl.innerHTML = `<span style="color:var(--warning); font-size:12px; font-weight:500;">⚠️ Saldo Kantong saat ini Rp0. Catat Pemasukan terlebih dahulu atau alokasikan saldo.</span>`;
   } else if (amountVal > 0 && amountVal > bal) {
     infoEl.innerHTML = `<span style="color:var(--danger); font-size:12px; font-weight:500;">⚠️ Melebihi saldo! Tersedia: <strong>${Currency.format(bal)}</strong> (kurang ${Currency.format(amountVal - bal)}).</span>`;
   } else {
-    infoEl.innerHTML = `<span style="color:var(--text-2); font-size:12px;">Saldo tersedia di Pundi ini: <strong>${Currency.format(bal)}</strong></span>`;
+    infoEl.innerHTML = `<span style="color:var(--text-2); font-size:12px;">Saldo tersedia di Kantong ini: <strong>${Currency.format(bal)}</strong></span>`;
   }
 }
 
@@ -1281,28 +1376,46 @@ function handleTxTypeChange(selectedType) {
   const catField = document.getElementById('tx-field-category');
   const destField = document.getElementById('tx-field-destination');
   const pundiLabel = document.getElementById('tx-pundi-label');
+  const allocField = document.getElementById('tx-income-allocation-field');
 
   populateCategorySelects(selectedType);
 
   if (selectedType === 'TRANSFER') {
     if (catField) catField.hidden = true;
     if (destField) destField.hidden = false;
-    if (pundiLabel) pundiLabel.textContent = 'Pundi Sumber';
+    if (pundiLabel) pundiLabel.textContent = 'Kantong Sumber';
+    if (allocField) {
+      allocField.hidden = true;
+      resetIncomeAllocations();
+    }
   } else if (selectedType === 'INCOME') {
     if (catField) catField.hidden = false;
     if (destField) destField.hidden = true;
-    if (pundiLabel) pundiLabel.textContent = 'Masuk ke Pundi';
+    if (pundiLabel) pundiLabel.textContent = 'Masuk ke Kantong';
+    if (allocField) allocField.hidden = false;
   } else {
     // EXPENSE
     if (catField) catField.hidden = false;
     if (destField) destField.hidden = true;
-    if (pundiLabel) pundiLabel.textContent = 'Bayar dari Pundi';
+    if (pundiLabel) pundiLabel.textContent = 'Bayar dari Kantong';
+    if (allocField) {
+      allocField.hidden = true;
+      resetIncomeAllocations();
+    }
   }
 
   updateTxPundiHint();
   CustomSelect.updateTrigger(document.getElementById('tx-pundi'));
   CustomSelect.updateTrigger(document.getElementById('tx-dest-pundi'));
   CustomSelect.updateTrigger(document.getElementById('tx-category'));
+}
+
+// Wire Add Income Allocation Row button
+const btnAddIncomeAlloc = document.getElementById('btn-add-income-alloc-row');
+if (btnAddIncomeAlloc) {
+  btnAddIncomeAlloc.addEventListener('click', () => {
+    addIncomeAllocRow();
+  });
 }
 
 // Listen to segmented radio change for tx type & inputs
@@ -1320,7 +1433,10 @@ if (dom.formTx) {
 
   const txAmountInput = document.getElementById('tx-amount');
   if (txAmountInput) {
-    txAmountInput.addEventListener('input', updateTxPundiHint);
+    txAmountInput.addEventListener('input', () => {
+      updateTxPundiHint();
+      updateIncomeAllocSummary();
+    });
   }
 
   // Transaction form submit
@@ -1349,18 +1465,18 @@ if (dom.formTx) {
 
     if (!pundiId && type !== 'INCOME') {
       const pundiTrigger = document.getElementById('cs-trigger-tx-pundi') || document.getElementById('tx-pundi');
-      Validator.showFieldError(pundiTrigger, 'Pundi wajib dipilih.');
+      Validator.showFieldError(pundiTrigger, 'Kantong wajib dipilih.');
       return;
     }
 
     if (type === 'TRANSFER') {
       const destTrigger = document.getElementById('cs-trigger-tx-dest-pundi') || document.getElementById('tx-dest-pundi');
       if (!destinationPundiId) {
-        Validator.showFieldError(destTrigger, 'Pundi tujuan transfer wajib dipilih.');
+        Validator.showFieldError(destTrigger, 'Kantong tujuan transfer wajib dipilih.');
         return;
       }
       if (pundiId === destinationPundiId) {
-        Validator.showFieldError(destTrigger, 'Pundi tujuan tidak boleh sama dengan pundi sumber.');
+        Validator.showFieldError(destTrigger, 'Kantong tujuan tidak boleh sama dengan kantong sumber.');
         return;
       }
     } else {
@@ -1379,10 +1495,30 @@ if (dom.formTx) {
 
     // Strict balance check on new EXPENSE or TRANSFER
     if (!id && pundiId !== 'MAIN_WALLET' && (type === 'EXPENSE' || type === 'TRANSFER') && sourceBalance < amount) {
-      const errText = type === 'TRANSFER' ? 'Saldo Pundi tidak mencukupi untuk transfer.' : 'Saldo Pundi tidak mencukupi.';
+      const errText = type === 'TRANSFER' ? 'Saldo Kantong tidak mencukupi untuk transfer.' : 'Saldo Kantong tidak mencukupi.';
       Validator.showFieldError(document.getElementById('tx-amount'), errText);
-      showToast(`Saldo Pundi "${sourcePundi?.name || 'terpilih'}" tidak mencukupi (${Currency.format(sourceBalance)}).`, 'error');
+      showToast(`Saldo Kantong "${sourcePundi?.name || 'terpilih'}" tidak mencukupi (${Currency.format(sourceBalance)}).`, 'error');
       return;
+    }
+
+    // Check Multi-Kantong Allocation for INCOME (Requirement 9)
+    let incomeAllocations = [];
+    if (type === 'INCOME') {
+      const allocRows = document.querySelectorAll('.tx-alloc-row');
+      let totalAllocated = 0;
+      for (const row of allocRows) {
+        const pId = row.querySelector('.tx-alloc-pundi')?.value;
+        const pAmt = Currency.parse(row.querySelector('.tx-alloc-amount')?.value || '0');
+        if (pId && pAmt > 0) {
+          incomeAllocations.push({ pundiId: pId, amount: pAmt });
+          totalAllocated += pAmt;
+        }
+      }
+
+      if (totalAllocated > amount) {
+        Validator.showFieldError(document.getElementById('tx-amount'), 'Total alokasi ke Kantong tidak boleh melebihi nominal pemasukan.');
+        return;
+      }
     }
 
     btnSubmit.disabled = true;
@@ -1408,10 +1544,19 @@ if (dom.formTx) {
           date,
           note
         });
+
+        // Apply Multi-Kantong allocations if specified (Requirement 9: internal partition without extra income/expense)
+        if (type === 'INCOME' && incomeAllocations.length > 0) {
+          for (const alloc of incomeAllocations) {
+            await PundiService.allocateFromAvailable(currentUser.uid, alloc.pundiId, alloc.amount);
+          }
+        }
+
         showToast('Transaksi berhasil disimpan.', 'success');
       }
 
       closeModal(dom.modalTx);
+      resetIncomeAllocations();
       await refreshBaselineData();
       await loadCurrentViewData();
     } catch (err) {
@@ -1432,7 +1577,7 @@ if (dom.formTx) {
       showConfirm({
         title: 'Hapus Transaksi?',
         message: `Transaksi senilai ${Currency.format(amount)} akan dihapus.`,
-        subtext: 'Saldo Pundi Anda akan disesuaikan kembali ke kondisi semula.',
+        subtext: 'Saldo Kantong Anda akan disesuaikan kembali ke kondisi semula.',
         actionLabel: 'Hapus',
         isDanger: true,
         onConfirm: async () => {
@@ -1684,7 +1829,7 @@ if (dom.formGoalSaving) {
    VIEW 4: REPORTS (Laporan & Copy-ready Text Export)
    ========================================================================== */
 
-let reportPeriod = 'month'; // Order: 7 Hari, Bulan Ini (Default), Bulan Lalu, Custom
+let reportPeriod = 'today'; // Standard order: Hari Ini (Default), 7 Hari, Bulan Ini, Bulan Lalu, Custom
 let reportCustomStart = '';
 let reportCustomEnd = '';
 
@@ -1747,10 +1892,10 @@ if (dom.formCustomDate) {
       return;
     }
 
-    // Requirement 3: Tanggal mulai tidak boleh lebih besar dari tanggal akhir:
-    // "Tanggal mulai tidak boleh lebih besar dari tanggal akhir."
+    // Requirement 20: Jika tanggal mulai > tanggal akhir:
+    // "Tanggal mulai tidak boleh melebihi tanggal akhir."
     if (startVal > endVal) {
-      Validator.showFieldError(startInput, 'Tanggal mulai tidak boleh lebih besar dari tanggal akhir.');
+      Validator.showFieldError(startInput, 'Tanggal mulai tidak boleh melebihi tanggal akhir.');
       return;
     }
 
@@ -1928,11 +2073,15 @@ function renderCategoryModalList(type = activeCatModalType) {
   if (btnExpense && btnIncome) {
     if (type === 'EXPENSE') {
       btnExpense.classList.add('is-active');
+      btnExpense.setAttribute('aria-pressed', 'true');
       btnIncome.classList.remove('is-active');
+      btnIncome.setAttribute('aria-pressed', 'false');
       if (nameInput) nameInput.placeholder = 'Contoh: Makanan, Belanja, Skincare';
     } else {
       btnExpense.classList.remove('is-active');
+      btnExpense.setAttribute('aria-pressed', 'false');
       btnIncome.classList.add('is-active');
+      btnIncome.setAttribute('aria-pressed', 'true');
       if (nameInput) nameInput.placeholder = 'Contoh: Gaji, Freelance, Dividen';
     }
   }

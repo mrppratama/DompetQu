@@ -63,28 +63,28 @@ export const Validator = {
     }
 
     if (!pundiId && type !== 'INCOME') {
-      errors.push('Pundi wajib dipilih.');
+      errors.push('Kantong wajib dipilih.');
     }
 
     if (type === 'EXPENSE') {
       if (!categoryId) {
         errors.push('Kategori pengeluaran wajib dipilih.');
       }
-      // Check balance non-negative rule if source is a specific Pundi
+      // Check balance non-negative rule if source is a specific Kantong
       if (pundiId && pundiId !== 'MAIN_WALLET' && typeof sourcePundiBalance === 'number' && numAmount > sourcePundiBalance) {
-        errors.push('Saldo Pundi tidak mencukupi.');
+        errors.push('Saldo Kantong tidak mencukupi.');
       }
     }
 
     if (type === 'TRANSFER') {
       if (!destinationPundiId) {
-        errors.push('Pundi tujuan transfer wajib dipilih.');
+        errors.push('Kantong tujuan transfer wajib dipilih.');
       } else if (pundiId === destinationPundiId) {
-        errors.push('Pundi sumber dan tujuan tidak boleh sama.');
+        errors.push('Kantong sumber dan tujuan tidak boleh sama.');
       }
 
       if (typeof sourcePundiBalance === 'number' && numAmount > sourcePundiBalance) {
-        errors.push('Saldo Pundi tidak mencukupi untuk transfer.');
+        errors.push('Saldo Kantong tidak mencukupi untuk transfer.');
       }
     }
 
@@ -98,7 +98,7 @@ export const Validator = {
   validatePundi({ name }) {
     const errors = [];
     if (!name || !name.trim()) {
-      errors.push('Nama Pundi wajib diisi.');
+      errors.push('Nama Kantong wajib diisi.');
     }
     return {
       isValid: errors.length === 0,

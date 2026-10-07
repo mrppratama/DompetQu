@@ -8,10 +8,10 @@
   <meta name="theme-color" content="#111315">
   <link rel="icon" type="image/svg+xml" href="assets/favicon/favicon.svg">
 
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/style.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/variables.css?v=1.5.3">
+  <link rel="stylesheet" href="css/style.css?v=1.5.3">
+  <link rel="stylesheet" href="css/components.css?v=1.5.3">
+  <link rel="stylesheet" href="css/responsive.css?v=1.5.3">
 
   <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -24,7 +24,7 @@
     </a>
 
     <h1 class="auth-title">Selamat Datang Kembali</h1>
-    <p class="auth-subtitle">Kelola pemasukan, pengeluaran, dan budget Pundi Anda.</p>
+    <p class="auth-subtitle">Kelola pemasukan, pengeluaran, dan alokasi Kantong Anda.</p>
 
     <div id="auth-alert" class="form-error" style="margin-bottom: 16px;" hidden></div>
 
@@ -39,9 +39,9 @@
           <label for="login-password">Kata Sandi</label>
           <a href="forgot-password.html" class="link small">Lupa sandi?</a>
         </div>
-        <div class="input-password-wrapper">
-          <input type="password" id="login-password" class="input" placeholder="Minimal 6 karakter" required autocomplete="current-password">
-          <button type="button" class="btn-toggle-password" id="btn-toggle-login-pass" aria-label="Lihat kata sandi" tabindex="-1">
+        <div class="input-password-wrapper" style="position: relative; width: 100%; display: flex; align-items: center; box-sizing: border-box;">
+          <input type="password" id="login-password" class="input" placeholder="Minimal 6 karakter" required autocomplete="current-password" style="width: 100%; padding-right: 44px; box-sizing: border-box;">
+          <button type="button" class="btn-toggle-password" id="btn-toggle-login-pass" aria-label="Lihat kata sandi" tabindex="-1" style="position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: transparent; border: none; outline: none; box-shadow: none; padding: 8px; cursor: pointer; color: var(--text-2); display: flex; align-items: center; justify-content: center; z-index: 2;">
             <i data-lucide="eye" style="width:18px;height:18px;"></i>
           </button>
         </div>

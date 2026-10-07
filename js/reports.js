@@ -40,7 +40,7 @@ export const ReportService = {
         // By Pundi
         const pundi = t.pundiId === 'MAIN_WALLET'
           ? { name: 'Saldo Tersedia', color: '#10B981' }
-          : (pundiMap[t.pundiId] || { name: 'Pundi Lain', color: '#10B981' });
+          : (pundiMap[t.pundiId] || { name: 'Kantong Lain', color: '#10B981' });
         if (!expenseByPundi[pundi.name]) {
           expenseByPundi[pundi.name] = { name: pundi.name, color: pundi.color, total: 0 };
         }

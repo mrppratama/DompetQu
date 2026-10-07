@@ -77,13 +77,12 @@ export const AuthService = {
       };
       localStorage.setItem(DEMO_USER_KEY, JSON.stringify(demoUser));
       await CategoryService.initDefaultCategories(demoUser.uid);
-      // Create initial first Pundi for onboarding
+      // Create initial first Kantong for onboarding
       await PundiService.createPundi(demoUser.uid, {
-        name: 'Pundi Utama',
-        monthlyBudget: 2000000,
+        name: 'Kantong Utama',
         initialBalance: 0,
         color: '#10B981',
-        icon: 'wallet'
+        icon: 'utensils'
       });
       return demoUser;
     }
@@ -108,12 +107,12 @@ export const AuthService = {
       // Seed default categories
       await CategoryService.initDefaultCategories(user.uid);
 
-      // Create initial onboarding Pundi
+      // Create initial onboarding Kantong
       await PundiService.createPundi(user.uid, {
-        name: 'Pundi Utama',
+        name: 'Kantong Utama',
         initialBalance: 0,
         color: '#10B981',
-        icon: 'wallet'
+        icon: 'utensils'
       });
 
       return user;
@@ -141,10 +140,10 @@ export const AuthService = {
       const pundis = await PundiService.getPundis(demoUser.uid);
       if (pundis.length === 0) {
         await PundiService.createPundi(demoUser.uid, {
-          name: 'Pundi Utama',
+          name: 'Kantong Utama',
           initialBalance: 0,
           color: '#10B981',
-          icon: 'wallet'
+          icon: 'utensils'
         });
       }
       return demoUser;

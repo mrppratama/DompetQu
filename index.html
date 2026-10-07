@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>DompetQu — Personal Finance PWA</title>
-  <meta name="description" content="Aplikasi manajemen keuangan pribadi berbasis PWA dengan sistem alokasi Pundi-Pundi.">
+  <meta name="description" content="Aplikasi manajemen keuangan pribadi berbasis PWA dengan sistem alokasi Kantong Uang.">
   <meta name="theme-color" content="#111315">
   <!-- Immediate Theme & PWA early interception -->
   <script>
@@ -48,10 +48,10 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/variables.css?v=1.5.2">
-  <link rel="stylesheet" href="css/style.css?v=1.5.2">
-  <link rel="stylesheet" href="css/components.css?v=1.5.2">
-  <link rel="stylesheet" href="css/responsive.css?v=1.5.2">
+  <link rel="stylesheet" href="css/variables.css?v=1.5.3">
+  <link rel="stylesheet" href="css/style.css?v=1.5.3">
+  <link rel="stylesheet" href="css/components.css?v=1.5.3">
+  <link rel="stylesheet" href="css/responsive.css?v=1.5.3">
 
   <!-- Chart.js & Lucide Icons -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -80,8 +80,8 @@
           <span>Dashboard</span>
         </a>
         <a href="#pundi" class="nav-link" data-view="pundi">
-          <i data-lucide="wallet-cards" class="icon" style="width:18px;height:18px;"></i>
-          <span>Pundi-Pundi</span>
+          <i data-lucide="utensils" class="icon" style="width:18px;height:18px;"></i>
+          <span>Kantong</span>
         </a>
         <a href="#goals" class="nav-link" data-view="goals">
           <i data-lucide="target" class="icon" style="width:18px;height:18px;"></i>
@@ -161,12 +161,12 @@
             <div class="dash-balance-label">
               <i data-lucide="wallet" class="icon" style="width: 14px; height: 14px;"></i>
               <span>Total Saldo Dompet</span>
-              <div class="dash-balance-info" tabindex="0" role="tooltip" title="Saldo Awal + Pemasukan - Pengeluaran.&#10;Total saldo mencakup saldo tersedia dan saldo yang dialokasikan ke Pundi." aria-label="Informasi Saldo">
+              <div class="dash-balance-info" tabindex="0" role="tooltip" title="Saldo Awal + Pemasukan - Pengeluaran. Termasuk saldo yang telah dialokasikan ke Kantong." aria-label="Informasi Saldo">
                 <i data-lucide="info" class="icon" style="width: 13px; height: 13px;"></i>
                 <div class="dash-balance-popover">
                   <div class="dash-balance-popover-title">Total Saldo Dompet</div>
                   <div class="dash-balance-popover-text">Saldo Awal + Pemasukan - Pengeluaran</div>
-                  <div class="dash-balance-popover-sub">Total saldo mencakup saldo tersedia dan saldo yang dialokasikan ke Pundi.</div>
+                  <div class="dash-balance-popover-sub">Saldo Awal + Pemasukan - Pengeluaran. Termasuk saldo yang telah dialokasikan ke Kantong.</div>
                 </div>
               </div>
             </div>
@@ -191,10 +191,10 @@
         </div>
 
         <div class="dash-grid">
-          <!-- Pundi Envelopes Overview -->
+          <!-- Kantong Overview -->
           <div class="section">
             <div class="section-head">
-              <h2 class="section-title">Pundi-Pundi</h2>
+              <h2 class="section-title">Kantong Uang</h2>
               <a href="#pundi" class="link" data-view="pundi">Kelola Semua</a>
             </div>
             <div class="alert-list" id="dash-pundi-list"></div>
@@ -225,7 +225,7 @@
       </section>
 
       <!-- ========================================== -->
-      <!-- VIEW 2: PUNDI-PUNDI                        -->
+      <!-- VIEW 2: KANTONG UANG                       -->
       <!-- ========================================== -->
       <section id="view-pundi" class="view" hidden>
         <div class="page-head">
@@ -234,19 +234,19 @@
               <i data-lucide="arrow-left" class="icon" style="width:18px;height:18px;"></i>
             </button>
             <div>
-              <span class="eyebrow">Envelope Budgeting</span>
-              <h2 class="amount-lg">Pundi-Pundi</h2>
+              <span class="eyebrow">Alokasi Mandiri</span>
+              <h2 class="amount-lg">Kantong Uang</h2>
             </div>
           </div>
           <div class="page-head-actions">
             <button type="button" class="btn btn-primary btn-open-pundi-modal">
               <i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i>
-              <span>Buat Pundi</span>
+              <span>Buat Kantong</span>
             </button>
           </div>
         </div>
 
-        <!-- Pundi Summary Card (Clean & Intuitive: Pemasukan, Pengeluaran, Total Saldo Pundi) -->
+        <!-- Kantong Summary Card (Clean & Intuitive: Pemasukan, Pengeluaran, Total Saldo Kantong) -->
         <dl class="summary-grid pundi-summary-grid" id="pundi-overview-banner" style="margin-bottom: 20px;">
           <div class="summary-item">
             <dt><i data-lucide="trending-up" class="icon text-income" style="width:15px;height:15px;"></i> Pemasukan</dt>
@@ -257,18 +257,18 @@
             <dd id="pundi-summary-expense">Rp0</dd>
           </div>
           <div class="summary-item summary-item-wide">
-            <dt><i data-lucide="vault" class="icon" style="width:15px;height:15px;"></i> Total Saldo Pundi</dt>
+            <dt><i data-lucide="utensils" class="icon" style="width:15px;height:15px;"></i> Total Saldo Kantong</dt>
             <dd id="pundi-total-allocated">Rp0</dd>
           </div>
         </dl>
 
-        <!-- Pundi Cards Grid -->
+        <!-- Kantong Cards Grid -->
         <div class="pundi-grid" id="pundi-list-cards"></div>
 
-        <!-- Archived Pundis Collapsible Section -->
+        <!-- Archived Kantong Collapsible Section -->
         <div class="section" id="archived-pundi-section" hidden>
           <div class="section-head">
-            <h3 class="section-title subtle">Pundi Diarsipkan</h3>
+            <h3 class="section-title subtle">Kantong Diarsipkan</h3>
           </div>
           <div class="alert-list" id="pundi-archived-list"></div>
         </div>
@@ -295,14 +295,15 @@
         <div class="toolbar">
           <div class="search">
             <i data-lucide="search" class="icon" style="width:16px;height:16px;"></i>
-            <input type="search" class="input" id="tx-search-input" placeholder="Cari transaksi, pundi, atau nominal...">
+            <input type="search" class="input" id="tx-search-input" placeholder="Cari transaksi, kantong, atau nominal...">
           </div>
         </div>
 
-        <!-- Filter Chips: Period (Order: 7 Hari, Bulan Ini [Default], Bulan Lalu, Custom) -->
+        <!-- Filter Chips: Period (Standard Order: Hari Ini [Default], 7 Hari, Bulan Ini, Bulan Lalu, Custom) -->
         <div class="chips period-chips" role="tablist" aria-label="Filter Periode Transaksi">
+          <button type="button" class="chip" data-tx-period="today" aria-pressed="true">Hari Ini</button>
           <button type="button" class="chip" data-tx-period="7days" aria-pressed="false">7 Hari</button>
-          <button type="button" class="chip" data-tx-period="month" aria-pressed="true">Bulan Ini</button>
+          <button type="button" class="chip" data-tx-period="month" aria-pressed="false">Bulan Ini</button>
           <button type="button" class="chip" data-tx-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
           <button type="button" class="chip" data-tx-period="custom" id="chip-tx-custom" aria-pressed="false">
             <span class="chip-label">Custom</span>
@@ -377,10 +378,11 @@
           </div>
         </div>
 
-        <!-- Filter Chips: Period (Order: 7 Hari, Bulan Ini [Default], Bulan Lalu, Custom) -->
+        <!-- Filter Chips: Period (Standard Order: Hari Ini [Default], 7 Hari, Bulan Ini, Bulan Lalu, Custom) -->
         <div class="chips period-chips" role="tablist" aria-label="Filter Periode Laporan">
+          <button type="button" class="chip" data-rep-period="today" aria-pressed="true">Hari Ini</button>
           <button type="button" class="chip" data-rep-period="7days" aria-pressed="false">7 Hari</button>
-          <button type="button" class="chip" data-rep-period="month" aria-pressed="true">Bulan Ini</button>
+          <button type="button" class="chip" data-rep-period="month" aria-pressed="false">Bulan Ini</button>
           <button type="button" class="chip" data-rep-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
           <button type="button" class="chip" data-rep-period="custom" id="chip-rep-custom" aria-pressed="false">
             <span class="chip-label">Custom</span>
@@ -388,7 +390,7 @@
           </button>
         </div>
 
-        <div class="period-note" style="margin-top: 10px;" id="rep-period-title">Bulan Ini</div>
+        <div class="period-note" style="margin-top: 10px;" id="rep-period-title">Hari Ini</div>
 
         <dl class="summary-grid">
           <div class="summary-item">
@@ -411,7 +413,7 @@
             <div class="card" id="rep-cat-list"></div>
           </div>
           <div class="section">
-            <h3 class="section-title" style="margin-bottom: 12px;">Pengeluaran per Pundi</h3>
+            <h3 class="section-title" style="margin-bottom: 12px;">Pengeluaran per Kantong</h3>
             <div class="card" id="rep-pundi-list"></div>
           </div>
         </div>
@@ -575,9 +577,9 @@
         <i data-lucide="layout-dashboard" class="icon" style="width:20px;height:20px;"></i>
         <span>Dashboard</span>
       </a>
-      <a href="#goals" class="bnav-link" data-view="goals">
-        <i data-lucide="target" class="icon" style="width:20px;height:20px;"></i>
-        <span>Target</span>
+      <a href="#pundi" class="bnav-link" data-view="pundi">
+        <i data-lucide="utensils" class="icon" style="width:20px;height:20px;"></i>
+        <span>Kantong</span>
       </a>
       <button type="button" class="bnav-fab btn-open-tx-modal" aria-label="Tambah Transaksi Baru">
         <i data-lucide="plus" style="width:24px;height:24px;"></i>
@@ -637,14 +639,14 @@
             </div>
           </div>
 
-          <!-- Pundi Selection -->
+          <!-- Kantong Selection -->
           <div class="field">
-            <label for="tx-pundi" id="tx-pundi-label">Pundi Sumber</label>
+            <label for="tx-pundi" id="tx-pundi-label">Kantong Sumber</label>
             <div class="custom-select-wrapper" id="cs-wrap-tx-pundi">
               <select id="tx-pundi" class="visually-hidden-select" data-pundi-select required></select>
               <button type="button" class="custom-select-trigger" id="cs-trigger-tx-pundi" aria-haspopup="listbox" aria-expanded="false">
                 <span class="custom-select-value">
-                  <span class="custom-select-placeholder">Pilih Pundi...</span>
+                  <span class="custom-select-placeholder">Pilih Kantong...</span>
                 </span>
                 <i data-lucide="chevron-down" class="custom-select-chevron"></i>
               </button>
@@ -653,18 +655,32 @@
             <span id="tx-pundi-info" class="hint" style="color:var(--text-2); margin-top:2px;"></span>
           </div>
 
-          <!-- Destination Pundi (for TRANSFER only) -->
+          <!-- Destination Kantong (for TRANSFER only) -->
           <div class="field" id="tx-field-destination" hidden>
-            <label for="tx-dest-pundi">Pundi Tujuan</label>
+            <label for="tx-dest-pundi">Kantong Tujuan</label>
             <div class="custom-select-wrapper" id="cs-wrap-tx-dest-pundi">
               <select id="tx-dest-pundi" class="visually-hidden-select" data-pundi-select></select>
               <button type="button" class="custom-select-trigger" id="cs-trigger-tx-dest-pundi" aria-haspopup="listbox" aria-expanded="false">
                 <span class="custom-select-value">
-                  <span class="custom-select-placeholder">Pilih Pundi Tujuan...</span>
+                  <span class="custom-select-placeholder">Pilih Kantong Tujuan...</span>
                 </span>
                 <i data-lucide="chevron-down" class="custom-select-chevron"></i>
               </button>
               <div class="custom-select-dropdown" id="cs-dropdown-tx-dest-pundi" role="listbox"></div>
+            </div>
+          </div>
+
+          <!-- Multi-Kantong Allocation Section for INCOME (Requirement 9) -->
+          <div class="field" id="tx-income-allocation-field" hidden style="margin-top: 14px; background: var(--surface-2); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-soft);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <label style="margin: 0; font-size: 13px; font-weight: 600; color: var(--text-1);">Alokasikan ke Kantong <span class="optional">(opsional)</span></label>
+              <button type="button" class="btn btn-secondary btn-sm" id="btn-add-income-alloc-row" style="padding: 2px 8px; font-size: 11px;">+ Tambah Kantong</button>
+            </div>
+            <p class="subtle xsmall" style="margin-bottom: 8px;">Bagi pemasukan ini ke beberapa Kantong. Total alokasi tidak boleh melebihi nominal pemasukan.</p>
+            <div id="tx-income-allocations-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+            <div id="tx-income-alloc-summary" style="margin-top: 8px; font-size: 11px; color: var(--text-2); display: flex; justify-content: space-between;" hidden>
+              <span>Total Alokasi: <strong id="tx-income-alloc-total" style="color: var(--primary);">Rp0</strong></span>
+              <span>Sisa Belum Dialokasikan: <strong id="tx-income-alloc-unallocated" style="color: var(--text-1);">Rp0</strong></span>
             </div>
           </div>
 
@@ -706,12 +722,12 @@
   </dialog>
 
   <!-- ============================================================== -->
-  <!-- MODAL: PUNDI MANAGEMENT (Create / Edit)                        -->
+  <!-- MODAL: KANTONG MANAGEMENT (Create / Edit)                      -->
   <!-- ============================================================== -->
   <dialog id="modal-pundi" class="modal">
     <div class="modal-panel">
       <div class="modal-header">
-        <h3 class="modal-title" id="modal-pundi-title">Buat Pundi Baru</h3>
+        <h3 class="modal-title" id="modal-pundi-title">Buat Kantong Baru</h3>
         <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
           <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
         </button>
@@ -722,23 +738,24 @@
           <input type="hidden" id="pundi-id">
 
           <div class="field">
-            <label for="pundi-name">Nama Pundi</label>
-            <input type="text" id="pundi-name" class="input" placeholder="Contoh: Darurat, Makan, Tagihan" required>
+            <label for="pundi-name">Nama Kantong</label>
+            <input type="text" id="pundi-name" class="input" placeholder="Contoh: Makan, Darurat, Tagihan, Belanja" required>
           </div>
 
           <div class="field">
             <label for="pundi-desc">Catatan / Deskripsi <span class="optional">(opsional)</span></label>
-            <input type="text" id="pundi-desc" class="input" placeholder="Pos pengeluaran atau alokasi">
+            <input type="text" id="pundi-desc" class="input" placeholder="Pos alokasi atau kebutuhan">
           </div>
 
-          <!-- Icon Picker -->
+          <!-- Icon Picker (Requirement 3: Default is food-themed utensils) -->
           <div class="field">
-            <label>Icon Pundi</label>
+            <label>Icon Kantong</label>
             <div class="icon-picker" id="pundi-icon-picker">
-              <label class="icon-option"><input type="radio" name="pundi_icon" value="wallet" checked><span><i data-lucide="wallet" style="width:18px;height:18px;"></i></span></label>
+              <label class="icon-option"><input type="radio" name="pundi_icon" value="utensils" checked><span><i data-lucide="utensils" style="width:18px;height:18px;"></i></span></label>
+              <label class="icon-option"><input type="radio" name="pundi_icon" value="coffee"><span><i data-lucide="coffee" style="width:18px;height:18px;"></i></span></label>
+              <label class="icon-option"><input type="radio" name="pundi_icon" value="wallet"><span><i data-lucide="wallet" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="vault"><span><i data-lucide="vault" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="shopping-bag"><span><i data-lucide="shopping-bag" style="width:18px;height:18px;"></i></span></label>
-              <label class="icon-option"><input type="radio" name="pundi_icon" value="coffee"><span><i data-lucide="coffee" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="home"><span><i data-lucide="home" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="car"><span><i data-lucide="car" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="heart-pulse"><span><i data-lucide="heart-pulse" style="width:18px;height:18px;"></i></span></label>
@@ -766,7 +783,7 @@
 
           <div class="form-actions" style="margin-top: 14px;">
             <button type="button" class="btn btn-secondary" data-close-modal>Batal</button>
-            <button type="submit" class="btn btn-primary">Simpan Pundi</button>
+            <button type="submit" class="btn btn-primary">Simpan Kantong</button>
           </div>
         </form>
       </div>
@@ -774,7 +791,7 @@
   </dialog>
 
   <!-- ============================================================== -->
-  <!-- MODAL: KEMBALIKAN SALDO PUNDI KE SALDO TERSEDIA                -->
+  <!-- MODAL: KEMBALIKAN SALDO KANTONG KE SALDO TERSEDIA              -->
   <!-- ============================================================== -->
   <dialog id="modal-pundi-return" class="modal">
     <div class="modal-panel">
@@ -790,7 +807,7 @@
           <input type="hidden" id="return-pundi-id">
 
           <div class="card" style="padding: 12px 14px; margin-bottom: 14px; background: var(--surface-2); border: 1px solid var(--border-soft);">
-            <div style="font-size: 12px; color: var(--text-2);">Pundi:</div>
+            <div style="font-size: 12px; color: var(--text-2);">Kantong:</div>
             <div id="return-pundi-name" style="font-weight: 700; font-size: 15px; margin-top: 2px;">-</div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; font-size: 13px;">
               <span style="color: var(--text-2);">Saldo Saat Ini:</span>
@@ -820,12 +837,12 @@
   </dialog>
 
   <!-- ============================================================== -->
-  <!-- MODAL: ALOKASIKAN SALDO TERSEDIA KE PUNDI                      -->
+  <!-- MODAL: ALOKASIKAN SALDO TERSEDIA KE KANTONG                    -->
   <!-- ============================================================== -->
   <dialog id="modal-pundi-allocate" class="modal">
     <div class="modal-panel">
       <div class="modal-header">
-        <h3 class="modal-title">Alokasikan ke Pundi</h3>
+        <h3 class="modal-title">Alokasikan ke Kantong</h3>
         <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
           <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
         </button>
@@ -839,11 +856,11 @@
           </div>
 
           <div class="field">
-            <label for="allocate-pundi-id">Pilih Pundi Tujuan</label>
+            <label for="allocate-pundi-id">Pilih Kantong Tujuan</label>
             <div class="custom-select-wrapper" id="cs-wrap-allocate-pundi-id">
               <select id="allocate-pundi-id" class="visually-hidden-select" data-pundi-select required></select>
               <button type="button" class="custom-select-trigger" id="cs-trigger-allocate-pundi-id" aria-haspopup="listbox" aria-expanded="false">
-                <span class="custom-select-placeholder">Pilih Pundi...</span>
+                <span class="custom-select-placeholder">Pilih Kantong...</span>
               </button>
               <div class="custom-select-dropdown" id="cs-dropdown-allocate-pundi-id" role="listbox"></div>
             </div>
@@ -855,7 +872,7 @@
               <span>Rp</span>
               <input type="text" inputmode="numeric" id="allocate-pundi-amount" class="input" placeholder="0" required>
             </div>
-            <span class="hint">Saldo Tersedia akan dipindahkan ke Pundi tanpa menambah atau mengurangi Total Saldo dompet Anda.</span>
+            <span class="hint">Saldo Tersedia akan dipindahkan ke Kantong tanpa menambah atau mengurangi Total Saldo dompet Anda.</span>
           </div>
 
           <div class="form-actions" style="margin-top: 16px;">
@@ -1131,14 +1148,26 @@
 
         <!-- Quick Settings & Actions List -->
         <div class="profile-menu-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
-          <!-- Kelola Pundi-Pundi -->
+          <!-- Kelola Kantong Uang -->
           <button type="button" class="profile-menu-item" id="profile-btn-pundi">
             <div class="profile-menu-item-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--primary);">
-              <i data-lucide="wallet-cards" class="icon" style="width: 18px; height: 18px;"></i>
+              <i data-lucide="utensils" class="icon" style="width: 18px; height: 18px;"></i>
             </div>
             <div class="profile-menu-item-text">
-              <span class="title">Kelola Pundi-Pundi</span>
-              <span class="desc">Alokasi amplop anggaran & saldo pundi</span>
+              <span class="title">Kelola Kantong Uang</span>
+              <span class="desc">Alokasikan uang & kelola saldo pos kantong</span>
+            </div>
+            <i data-lucide="chevron-right" class="icon" style="width: 16px; height: 16px; color: var(--text-3);"></i>
+          </button>
+
+          <!-- Target Keuangan (Requirement 5: Diakses melalui Profile) -->
+          <button type="button" class="profile-menu-item" id="profile-btn-goals">
+            <div class="profile-menu-item-icon" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">
+              <i data-lucide="target" class="icon" style="width: 18px; height: 18px;"></i>
+            </div>
+            <div class="profile-menu-item-text">
+              <span class="title">Target Keuangan</span>
+              <span class="desc">Pantau progres dan impian finansial Anda</span>
             </div>
             <i data-lucide="chevron-right" class="icon" style="width: 16px; height: 16px; color: var(--text-3);"></i>
           </button>
@@ -1219,19 +1248,38 @@
         </button>
       </div>
 
-      <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding-right: 4px;">
+      <div class="modal-body" style="max-height: 420px; overflow-y: auto; padding: 0 16px 16px; box-sizing: border-box;">
+        <!-- Version 1.5.3 -->
+        <div class="changelog-card">
+          <div class="changelog-head">
+            <div class="changelog-version">
+              <span>v1.5.3</span>
+              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
+            </div>
+            <span class="changelog-date">8 Oktober 2026</span>
+          </div>
+          <ul class="changelog-list">
+            <li><strong>Revisi Terminologi Kantong Uang:</strong> Mengganti istilah "Pundi" menjadi "Kantong" secara menyeluruh di seluruh aplikasi, navigasi, form, kartu, dan laporan.</li>
+            <li><strong>Ikon Default Kuliner (Utensils):</strong> Mengganti default ikon dengan tema makanan & kuliner Lucide, serta menjamin ikon langsung muncul tanpa perlu refresh.</li>
+            <li><strong>Bottom Navigation Standar:</strong> Tata letak 5 menu: <code>Dashboard | Kantong | + | Transaksi | Laporan</code>. Menu Target Keuangan kini diakses fleksibel melalui Profil.</li>
+            <li><strong>Responsive Card Kantong:</strong> Judul kantong panjang otomatis dibatasi maksimal 2 baris dengan ellipsis tanpa merusak grid layout di mobile maupun desktop.</li>
+            <li><strong>Alokasi Multi-Kantong pada Pemasukan:</strong> Pemasukan baru dapat langsung dipartisi ke beberapa kantong tujuan sekaligus secara presisi.</li>
+            <li><strong>Filter Waktu Global:</strong> Urutan standar filter periode: Hari Ini (default), 7 Hari, Bulan Ini, Bulan Lalu, dan Custom dengan label rentang dinamis.</li>
+            <li><strong>Eye Toggle Password & UI Fix:</strong> Ikon mata kata sandi kini terpasang rapi di dalam input pada semua ukuran layar, dan active tab kategori tampil kontras jelas.</li>
+          </ul>
+        </div>
+
         <!-- Version 1.4.4 -->
         <div class="changelog-card">
           <div class="changelog-head">
             <div class="changelog-version">
               <span>v1.4.4</span>
-              <span class="badge badge-good" style="font-size: 11px;">Terbaru</span>
             </div>
             <span class="changelog-date">7 Oktober 2026</span>
           </div>
           <ul class="changelog-list">
             <li><strong>Revisi Card Dashboard (3 Card):</strong> Menghapus card "Saldo Bersih" yang redundant. Dashboard kini fokus pada 3 indikator utama: Total Saldo Dompet, Pemasukan, dan Pengeluaran, lengkap dengan info tooltip rumus saldo e-wallet.</li>
-            <li><strong>Presisi Logic Pundi & Saldo Tersedia:</strong> Alokasi ke Pundi tidak mengubah Total Saldo, dan pengeluaran dari Pundi tidak menyebabkan double counting. Total Saldo = Saldo Tersedia + Total Pundi.</li>
+            <li><strong>Presisi Logic Kantong & Saldo Tersedia:</strong> Alokasi ke Kantong tidak mengubah Total Saldo, dan pengeluaran dari Kantong tidak menyebabkan double counting. Total Saldo = Saldo Tersedia + Total Kantong.</li>
             <li><strong>Bug Fix Hapus Transaksi Transfer:</strong> Transaksi Transfer kini dapat dihapus dengan sukses tanpa error transaksi Firestore (read-before-write), mengembalikan saldo sumber dan tujuan secara tepat.</li>
             <li><strong>Custom Alert & Validasi Form:</strong> Mengganti alert dan popup bawaan browser dengan pesan validasi berbahasa Indonesia dan error state visual bergaya DompetQu.</li>
             <li><strong>Kontrol Tema di Header:</strong> Toggle Light / Dark Mode kini berada tepat di header dashboard di sebelah profil untuk akses cepat global seketika. Opsi tema duplikat di menu profil & pengaturan telah dibersihkan.</li>

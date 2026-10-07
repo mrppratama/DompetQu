@@ -86,31 +86,31 @@ export const TransactionService = {
       const sourcePundi = isSpecificPundi ? pundiList.find(p => p.id === pundiId) : null;
 
       if (isSpecificPundi && !sourcePundi) {
-        throw new Error('Pundi sumber tidak ditemukan.');
+        throw new Error('Kantong sumber tidak ditemukan.');
       }
 
       if (type === 'EXPENSE' && sourcePundi) {
         if ((sourcePundi.balance || 0) < numAmount) {
-          throw new Error('Saldo Pundi tidak mencukupi.');
+          throw new Error('Saldo Kantong tidak mencukupi.');
         }
         sourcePundi.balance = (sourcePundi.balance || 0) - numAmount;
       } else if (type === 'INCOME' && sourcePundi) {
         sourcePundi.balance = (sourcePundi.balance || 0) + numAmount;
       } else if (type === 'TRANSFER') {
-        if (!sourcePundi) throw new Error('Pundi sumber transfer wajib dipilih.');
+        if (!sourcePundi) throw new Error('Kantong sumber transfer wajib dipilih.');
         if (!destinationPundiId || destinationPundiId === pundiId) {
-          throw new Error('Pundi tujuan transfer tidak valid.');
+          throw new Error('Kantong tujuan transfer tidak valid.');
         }
         const destPundi = pundiList.find(p => p.id === destinationPundiId);
-        if (!destPundi) throw new Error('Pundi tujuan tidak ditemukan.');
+        if (!destPundi) throw new Error('Kantong tujuan tidak ditemukan.');
         if ((sourcePundi.balance || 0) < numAmount) {
-          throw new Error('Saldo Pundi tidak mencukupi untuk transfer.');
+          throw new Error('Saldo Kantong tidak mencukupi untuk transfer.');
         }
         sourcePundi.balance = (sourcePundi.balance || 0) - numAmount;
         destPundi.balance = (destPundi.balance || 0) + numAmount;
       }
 
-      if (sourcePundi) {
+      if (sourcePundi || (type === 'TRANSFER' && destinationPundiId)) {
         localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(pundiList));
       }
 
@@ -146,7 +146,7 @@ export const TransactionService = {
       if (sourcePundiRef) {
         const sourceSnap = await t.get(sourcePundiRef);
         if (!sourceSnap.exists()) {
-          throw new Error('Pundi sumber tidak ditemukan.');
+          throw new Error('Kantong sumber tidak ditemukan.');
         }
         sourceData = sourceSnap.data();
         currentSourceBalance = Number(sourceData.balance || 0);
@@ -156,18 +156,18 @@ export const TransactionService = {
       let currentDestBalance = 0;
       if (type === 'TRANSFER') {
         if (!destPundiRef || pundiId === destinationPundiId) {
-          throw new Error('Pundi tujuan transfer tidak valid.');
+          throw new Error('Kantong tujuan transfer tidak valid.');
         }
         destSnap = await t.get(destPundiRef);
         if (!destSnap.exists()) {
-          throw new Error('Pundi tujuan tidak ditemukan.');
+          throw new Error('Kantong tujuan tidak ditemukan.');
         }
         currentDestBalance = Number(destSnap.data().balance || 0);
       }
 
       if (type === 'EXPENSE' && sourcePundiRef) {
         if (currentSourceBalance < numAmount) {
-          throw new Error('Saldo Pundi tidak mencukupi.');
+          throw new Error('Saldo Kantong tidak mencukupi.');
         }
         t.update(sourcePundiRef, {
           balance: currentSourceBalance - numAmount,
@@ -178,9 +178,11 @@ export const TransactionService = {
           balance: currentSourceBalance + numAmount,
           updatedAt: serverTimestamp()
         });
-      } else if (type === 'TRANSFER') {
-        if (currentSourceBalance < numAmount) {
-          throw new Error('Saldo Pundi tidak mencukupi untuk transfer.');
+      }
+
+      if (type === 'TRANSFER') {
+        if (sourcePundiRef && currentSourceBalance < numAmount) {
+          throw new Error('Saldo Kantong tidak mencukupi untuk transfer.');
         }
 
         if (sourcePundiRef) {
@@ -228,19 +230,20 @@ export const TransactionService = {
       const pundiList = JSON.parse(localStorage.getItem(`dompetqu_pundis_${userId}`) || '[]');
       const isSpecificPundi = tx.pundiId && tx.pundiId !== 'MAIN_WALLET';
       const sourcePundi = isSpecificPundi ? pundiList.find(p => p.id === tx.pundiId) : null;
+      let destPundi = null;
 
       if (tx.type === 'EXPENSE' && sourcePundi) {
         sourcePundi.balance = (sourcePundi.balance || 0) + tx.amount;
       } else if (tx.type === 'INCOME' && sourcePundi) {
         sourcePundi.balance = Math.max(0, (sourcePundi.balance || 0) - tx.amount);
       } else if (tx.type === 'TRANSFER') {
-        const destPundi = pundiList.find(p => p.id === tx.destinationPundiId);
+        destPundi = pundiList.find(p => p.id === tx.destinationPundiId);
         if (sourcePundi) sourcePundi.balance = (sourcePundi.balance || 0) + tx.amount;
         if (destPundi) destPundi.balance = Math.max(0, (destPundi.balance || 0) - tx.amount);
       }
 
       txList.splice(txIdx, 1);
-      if (sourcePundi) {
+      if (sourcePundi || destPundi) {
         localStorage.setItem(`dompetqu_pundis_${userId}`, JSON.stringify(pundiList));
       }
       localStorage.setItem(`dompetqu_transactions_${userId}`, JSON.stringify(txList));
