@@ -232,9 +232,26 @@ export const DateUtil = {
    * 4. Bulan Lalu: tanggal 1 sampai hari terakhir bulan sebelumnya
    * 5. Custom: customStart s.d. customEnd
    */
-  getPeriodRange(periodKey = 'today', customStart = null, customEnd = null) {
+  getPeriodRange(periodKey = 'month', customStart = null, customEnd = null) {
     const now = new Date();
     const todayStr = this.toLocalDateString(now);
+
+    if (periodKey === 'today') {
+      const start = new Date(now);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      return {
+        period: 'today',
+        startDate: todayStr,
+        endDate: todayStr,
+        startObj: start,
+        endObj: end,
+        label: `Hari Ini (${this.formatDate(todayStr)})`,
+        shortLabel: 'Hari Ini',
+        displayRange: this.formatDate(todayStr)
+      };
+    }
 
     if (periodKey === '7days') {
       const start = new Date(now);
@@ -309,20 +326,21 @@ export const DateUtil = {
       };
     }
 
-    // Default: 'today'
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
+    // Default fallback: 'month'
+    const start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
     const end = new Date(now);
     end.setHours(23, 59, 59, 999);
+    const startStr = this.toLocalDateString(start);
+    const endStr = this.toLocalDateString(end);
     return {
-      period: 'today',
-      startDate: todayStr,
-      endDate: todayStr,
+      period: 'month',
+      startDate: startStr,
+      endDate: endStr,
       startObj: start,
       endObj: end,
-      label: `Hari Ini (${this.formatDate(todayStr)})`,
-      shortLabel: 'Hari Ini',
-      displayRange: this.formatDate(todayStr)
+      label: `Bulan Ini (${this.formatDate(startStr, false)} - ${this.formatDate(endStr)})`,
+      shortLabel: 'Bulan Ini',
+      displayRange: `${this.formatDate(startStr, false)} - ${this.formatDate(endStr)}`
     };
   },
 

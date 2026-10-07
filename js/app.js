@@ -89,6 +89,8 @@ const dom = {
   formGoalSaving: document.getElementById('form-goal-saving'),
   modalCategories: document.getElementById('modal-categories'),
   formCategory: document.getElementById('form-category'),
+  modalEditCategory: document.getElementById('modal-edit-category'),
+  formEditCategory: document.getElementById('form-edit-category'),
   btnOpenCatModal: document.getElementById('btn-open-cat-modal'),
   settingsCatChips: document.getElementById('settings-categories-chips'),
   modalProfile: document.getElementById('modal-profile'),
@@ -504,10 +506,16 @@ async function loadPundiView() {
       </div>
     `;
   } else {
-    // Pure Envelope budgeting cards: No budget, no percentage, no progress bars
+    // Render active Pundi cards with breakdown (Terpakai, Sisa, Total, %) & horizontal chart
     pundiContainer.innerHTML = active.map(p => {
       const pundiIcon = resolvePundiIcon(p.icon);
       const curBal = Number(p.balance || 0);
+      const spent = allTx
+        .filter(t => t.type === 'EXPENSE' && t.pundiId === p.id)
+        .reduce((sum, t) => sum + Number(t.amount || 0), 0);
+      const totalAllocated = spent + curBal;
+      const spentPct = totalAllocated > 0 ? Math.min(100, Math.round((spent / totalAllocated) * 100)) : 0;
+      const leftPct = totalAllocated > 0 ? Math.max(0, 100 - spentPct) : (curBal > 0 ? 100 : 0);
 
       return `
         <div class="card pundi-card" data-pundi-id="${p.id}" style="display: flex; flex-direction: column; justify-content: space-between;">
@@ -530,9 +538,40 @@ async function loadPundiView() {
               </div>
             </div>
 
-            <div class="kv" style="margin-top: 14px; margin-bottom: 16px;">
-              <span class="kv-label" style="font-size: 12px; color: var(--text-2);">Saldo Saat Ini</span>
+            <div class="kv" style="margin-top: 10px; margin-bottom: 12px;">
+              <span class="kv-label" style="font-size: 12px; color: var(--text-2);">Sisa Saldo Pundi</span>
               <span class="kv-value" style="font-size: 20px; font-weight: 800; color: var(--text-1);">${Currency.format(curBal)}</span>
+            </div>
+
+            <!-- Breakdown & Chart Panjang Pemakaian vs Sisa -->
+            <div class="pundi-breakdown" style="background: var(--surface-2); border-radius: var(--radius-md); padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-soft);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 12px; color: var(--text-2); font-weight: 500;">Alokasi Keseluruhan</span>
+                <span style="font-size: 12px; font-weight: 700; color: var(--text-1);">${Currency.format(totalAllocated)}</span>
+              </div>
+
+              <!-- Horizontal Long Progress Chart -->
+              <div class="pundi-chart-bar" style="height: 10px; border-radius: 999px; background: var(--surface-3); display: flex; overflow: hidden; margin-bottom: 10px; width: 100%;">
+                <div style="width: ${spentPct}%; background: #EF4444; transition: width 0.3s;" title="Terpakai: ${Currency.format(spent)} (${spentPct}%)"></div>
+                <div style="width: ${leftPct}%; background: ${p.color || '#10B981'}; transition: width 0.3s;" title="Sisa: ${Currency.format(curBal)} (${leftPct}%)"></div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; font-size: 12px;">
+                <div style="display: flex; flex-direction: column;">
+                  <span style="color: var(--text-2); font-size: 11px; display: inline-flex; align-items: center; gap: 4px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: #EF4444; display: inline-block;"></span>
+                    Terpakai (${spentPct}%)
+                  </span>
+                  <span style="font-weight: 700; color: #EF4444; margin-top: 2px;">${Currency.format(spent)}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; text-align: right;">
+                  <span style="color: var(--text-2); font-size: 11px; display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px;">
+                    <span style="width: 6px; height: 6px; border-radius: 50%; background: ${p.color || '#10B981'}; display: inline-block;"></span>
+                    Sisa (${leftPct}%)
+                  </span>
+                  <span style="font-weight: 700; color: var(--text-1); margin-top: 2px;">${Currency.format(curBal)}</span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -947,7 +986,7 @@ document.addEventListener('click', async (e) => {
    ========================================================================== */
 
 let txFilterState = {
-  period: 'today', // Strict Rule: 1. Hari Ini, 2. 7 Hari, 3. Bulan Ini, 4. Bulan Lalu, 5. Custom. Default: today
+  period: 'month', // Order: 7 Hari, Bulan Ini (Default), Bulan Lalu, Custom
   type: '',        // '', 'EXPENSE', 'INCOME', 'TRANSFER'
   pundiId: '',
   categoryId: '',
@@ -1645,7 +1684,7 @@ if (dom.formGoalSaving) {
    VIEW 4: REPORTS (Laporan & Copy-ready Text Export)
    ========================================================================== */
 
-let reportPeriod = 'today'; // Strict Rule: 1. Hari Ini, 2. 7 Hari, 3. Bulan Ini, 4. Bulan Lalu, 5. Custom. Default: today
+let reportPeriod = 'month'; // Order: 7 Hari, Bulan Ini (Default), Bulan Lalu, Custom
 let reportCustomStart = '';
 let reportCustomEnd = '';
 
@@ -1914,12 +1953,12 @@ function renderCategoryModalList(type = activeCatModalType) {
         <span class="legend-dot" style="--c: ${cat.color || '#10B981'}; width: 10px; height: 10px; flex-shrink: 0;"></span>
         <span style="font-weight: 500; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(cat.name)}</span>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-        <span class="badge ${cat.isArchived ? '' : 'badge-good'}" style="font-size: 11px;">
-          ${cat.isArchived ? 'Diarsipkan' : 'Aktif'}
-        </span>
-        <button type="button" class="icon-btn icon-btn-sm btn-toggle-cat-archive" data-cat-id="${cat.id}" data-archived="${cat.isArchived ? 'true' : 'false'}" title="${cat.isArchived ? 'Aktifkan Kategori' : 'Arsipkan Kategori'}">
-          <i data-lucide="${cat.isArchived ? 'archive-restore' : 'archive'}" style="width: 14px; height: 14px;"></i>
+      <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+        <button type="button" class="icon-btn icon-btn-sm btn-edit-cat" data-cat-id="${cat.id}" data-cat-name="${escapeHtml(cat.name)}" title="Edit Kategori">
+          <i data-lucide="edit-2" style="width: 14px; height: 14px;"></i>
+        </button>
+        <button type="button" class="icon-btn icon-btn-sm btn-delete-cat text-expense" data-cat-id="${cat.id}" data-cat-name="${escapeHtml(cat.name)}" title="Hapus Kategori" style="color: var(--danger);">
+          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
         </button>
       </div>
     </div>
@@ -1927,20 +1966,45 @@ function renderCategoryModalList(type = activeCatModalType) {
 
   refreshIcons();
 
-  listEl.querySelectorAll('.btn-toggle-cat-archive').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+  // Category Edit buttons
+  listEl.querySelectorAll('.btn-edit-cat').forEach(btn => {
+    btn.addEventListener('click', (e) => {
       const catId = e.currentTarget.getAttribute('data-cat-id');
-      const isArchived = e.currentTarget.getAttribute('data-archived') === 'true';
-      try {
-        await CategoryService.toggleArchiveCategory(currentUser.uid, catId, !isArchived);
-        cachedCategories = await CategoryService.getCategories(currentUser.uid);
-        renderCategoryModalList(activeCatModalType);
-        renderSettingsCategoryChips();
-        populateCategorySelects();
-        showToast(isArchived ? 'Kategori diaktifkan kembali.' : 'Kategori berhasil diarsipkan.', 'info');
-      } catch (err) {
-        showToast(formatFriendlyError(err), 'error');
+      const catName = e.currentTarget.getAttribute('data-cat-name');
+      const idInput = document.getElementById('edit-cat-id');
+      const nameInput = document.getElementById('edit-cat-name');
+      if (idInput) idInput.value = catId;
+      if (nameInput) nameInput.value = catName;
+      if (dom.modalEditCategory) {
+        Validator.clearFormErrors(dom.formEditCategory);
+        openModal(dom.modalEditCategory);
       }
+    });
+  });
+
+  // Category Delete buttons
+  listEl.querySelectorAll('.btn-delete-cat').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const catId = e.currentTarget.getAttribute('data-cat-id');
+      const catName = e.currentTarget.getAttribute('data-cat-name');
+      showConfirm({
+        title: 'Hapus Kategori?',
+        message: `Kategori "${catName}" akan dihapus permanen.`,
+        actionLabel: 'Hapus',
+        isDanger: true,
+        onConfirm: async () => {
+          try {
+            await CategoryService.deleteCategory(currentUser.uid, catId);
+            cachedCategories = await CategoryService.getCategories(currentUser.uid);
+            renderCategoryModalList(activeCatModalType);
+            renderSettingsCategoryChips();
+            populateCategorySelects();
+            showToast(`Kategori "${catName}" berhasil dihapus.`, 'success');
+          } catch (err) {
+            showToast(formatFriendlyError(err), 'error');
+          }
+        }
+      });
     });
   });
 }
@@ -1962,10 +2026,16 @@ function initCategoryListeners() {
     btnIncome.addEventListener('click', () => renderCategoryModalList('INCOME'));
   }
 
+  // Add Category Submit
   if (dom.formCategory) {
     dom.formCategory.addEventListener('submit', async (e) => {
       e.preventDefault();
       Validator.clearFormErrors(dom.formCategory);
+      const nameInput = document.getElementById('new-cat-name');
+      const typeInput = document.getElementById('new-cat-type');
+      const name = nameInput ? nameInput.value.trim() : '';
+      const type = typeInput ? typeInput.value : activeCatModalType;
+
       if (!name) {
         Validator.showFieldError(nameInput, 'Nama kategori wajib diisi.');
         return;
@@ -1987,6 +2057,40 @@ function initCategoryListeners() {
         renderSettingsCategoryChips();
         populateCategorySelects();
         showToast(`Kategori "${name}" berhasil ditambahkan.`, 'success');
+      } catch (err) {
+        showToast(formatFriendlyError(err), 'error');
+      } finally {
+        if (btnSubmit) btnSubmit.disabled = false;
+      }
+    });
+  }
+
+  // Edit Category Submit
+  if (dom.formEditCategory) {
+    dom.formEditCategory.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      Validator.clearFormErrors(dom.formEditCategory);
+      const idInput = document.getElementById('edit-cat-id');
+      const nameInput = document.getElementById('edit-cat-name');
+      const catId = idInput ? idInput.value : '';
+      const newName = nameInput ? nameInput.value.trim() : '';
+
+      if (!newName) {
+        Validator.showFieldError(nameInput, 'Nama kategori wajib diisi.');
+        return;
+      }
+
+      const btnSubmit = dom.formEditCategory.querySelector('button[type="submit"]');
+      if (btnSubmit) btnSubmit.disabled = true;
+
+      try {
+        await CategoryService.updateCategory(currentUser.uid, catId, { name: newName });
+        if (dom.modalEditCategory) closeModal(dom.modalEditCategory);
+        cachedCategories = await CategoryService.getCategories(currentUser.uid);
+        renderCategoryModalList(activeCatModalType);
+        renderSettingsCategoryChips();
+        populateCategorySelects();
+        showToast(`Kategori berhasil diperbarui menjadi "${newName}".`, 'success');
       } catch (err) {
         showToast(formatFriendlyError(err), 'error');
       } finally {

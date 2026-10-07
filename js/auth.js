@@ -111,7 +111,6 @@ export const AuthService = {
       // Create initial onboarding Pundi
       await PundiService.createPundi(user.uid, {
         name: 'Pundi Utama',
-        monthlyBudget: 2000000,
         initialBalance: 0,
         color: '#10B981',
         icon: 'wallet'
@@ -143,7 +142,6 @@ export const AuthService = {
       if (pundis.length === 0) {
         await PundiService.createPundi(demoUser.uid, {
           name: 'Pundi Utama',
-          monthlyBudget: 2000000,
           initialBalance: 0,
           color: '#10B981',
           icon: 'wallet'

@@ -48,10 +48,10 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/variables.css?v=1.5.0">
-  <link rel="stylesheet" href="css/style.css?v=1.5.0">
-  <link rel="stylesheet" href="css/components.css?v=1.5.0">
-  <link rel="stylesheet" href="css/responsive.css?v=1.5.0">
+  <link rel="stylesheet" href="css/variables.css?v=1.5.1">
+  <link rel="stylesheet" href="css/style.css?v=1.5.1">
+  <link rel="stylesheet" href="css/components.css?v=1.5.1">
+  <link rel="stylesheet" href="css/responsive.css?v=1.5.1">
 
   <!-- Chart.js & Lucide Icons -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -239,10 +239,6 @@
             </div>
           </div>
           <div class="page-head-actions">
-            <button type="button" class="btn btn-secondary btn-open-allocate-modal">
-              <i data-lucide="arrow-up-right" class="icon" style="width:16px;height:16px;"></i>
-              <span>Alokasikan Saldo</span>
-            </button>
             <button type="button" class="btn btn-primary btn-open-pundi-modal">
               <i data-lucide="plus" class="icon" style="width:16px;height:16px;"></i>
               <span>Buat Pundi</span>
@@ -303,11 +299,10 @@
           </div>
         </div>
 
-        <!-- Filter Chips: Period (Global Rule: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Custom) -->
+        <!-- Filter Chips: Period (Order: 7 Hari, Bulan Ini [Default], Bulan Lalu, Custom) -->
         <div class="chips period-chips" role="tablist" aria-label="Filter Periode Transaksi">
-          <button type="button" class="chip" data-tx-period="today" aria-pressed="true">Hari Ini</button>
           <button type="button" class="chip" data-tx-period="7days" aria-pressed="false">7 Hari</button>
-          <button type="button" class="chip" data-tx-period="month" aria-pressed="false">Bulan Ini</button>
+          <button type="button" class="chip" data-tx-period="month" aria-pressed="true">Bulan Ini</button>
           <button type="button" class="chip" data-tx-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
           <button type="button" class="chip" data-tx-period="custom" id="chip-tx-custom" aria-pressed="false">
             <span class="chip-label">Custom</span>
@@ -382,11 +377,10 @@
           </div>
         </div>
 
-        <!-- Filter Chips: Period (Global Rule: Hari Ini, 7 Hari, Bulan Ini, Bulan Lalu, Custom) -->
+        <!-- Filter Chips: Period (Order: 7 Hari, Bulan Ini [Default], Bulan Lalu, Custom) -->
         <div class="chips period-chips" role="tablist" aria-label="Filter Periode Laporan">
-          <button type="button" class="chip" data-rep-period="today" aria-pressed="true">Hari Ini</button>
           <button type="button" class="chip" data-rep-period="7days" aria-pressed="false">7 Hari</button>
-          <button type="button" class="chip" data-rep-period="month" aria-pressed="false">Bulan Ini</button>
+          <button type="button" class="chip" data-rep-period="month" aria-pressed="true">Bulan Ini</button>
           <button type="button" class="chip" data-rep-period="lastmonth" aria-pressed="false">Bulan Lalu</button>
           <button type="button" class="chip" data-rep-period="custom" id="chip-rep-custom" aria-pressed="false">
             <span class="chip-label">Custom</span>
@@ -394,7 +388,7 @@
           </button>
         </div>
 
-        <div class="period-note" style="margin-top: 10px;" id="rep-period-title">Hari Ini</div>
+        <div class="period-note" style="margin-top: 10px;" id="rep-period-title">Bulan Ini</div>
 
         <dl class="summary-grid">
           <div class="summary-item">
@@ -1051,6 +1045,33 @@
   </dialog>
 
   <!-- ============================================================== -->
+  <!-- MODAL: EDIT CATEGORY                                           -->
+  <!-- ============================================================== -->
+  <dialog id="modal-edit-category" class="modal">
+    <div class="modal-panel" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 class="modal-title">Edit Kategori</h3>
+        <button type="button" class="icon-btn" data-close-modal aria-label="Tutup">
+          <i data-lucide="x" class="icon" style="width:18px;height:18px;"></i>
+        </button>
+      </div>
+      <form id="form-edit-category" class="form" novalidate>
+        <div class="modal-body">
+          <input type="hidden" id="edit-cat-id">
+          <div class="field">
+            <label for="edit-cat-name" class="small" style="font-weight: 500; display: block; margin-bottom: 6px;">Nama Kategori</label>
+            <input type="text" id="edit-cat-name" class="input" required placeholder="Contoh: Belanja Bulanan">
+          </div>
+          <div class="form-actions" style="margin-top: 18px; display: flex; gap: 8px; justify-content: flex-end;">
+            <button type="button" class="btn btn-secondary" data-close-modal>Batal</button>
+            <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- ============================================================== -->
   <!-- MODAL: PROFILE & QUICK SETTINGS                                -->
   <!-- ============================================================== -->
   <dialog id="modal-profile" class="modal">
@@ -1327,6 +1348,6 @@
   <div class="toast-root" role="region" aria-label="Pemberitahuan"></div>
 
   <!-- Main ES Module Script -->
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/app.js?v=1.5.1"></script>
 </body>
 </html>

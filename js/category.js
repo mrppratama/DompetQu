@@ -11,6 +11,7 @@ import {
   setDoc,
   addDoc,
   updateDoc,
+  deleteDoc,
   writeBatch,
   serverTimestamp,
   isConfigured
@@ -82,67 +83,97 @@ export const CategoryService = {
   /**
    * Fetch all user categories (with auto-seed & foolproof defaults)
    */
+  /**
+   * Fetch all user categories (with auto-seed & automatic deduplication)
+   */
   async getCategories(userId) {
     if (!userId) return [];
 
+    let rawList = [];
     if (!isConfigured || !db) {
       const stored = localStorage.getItem(`dompetqu_categories_${userId}`);
       if (stored) {
-        try { return JSON.parse(stored); } catch (e) {}
+        try { rawList = JSON.parse(stored); } catch (e) {}
+      } else {
+        rawList = [
+          ...DEFAULT_EXPENSE_CATEGORIES.map((c, i) => ({ id: `exp_${i}`, ...c, isArchived: false })),
+          ...DEFAULT_INCOME_CATEGORIES.map((c, i) => ({ id: `inc_${i}`, ...c, isArchived: false }))
+        ];
       }
-      return [
+    } else {
+      try {
+        const colRef = collection(db, 'users', userId, 'categories');
+        const snap = await getDocs(colRef);
+
+        if (snap.empty) {
+          await this.initDefaultCategories(userId);
+          const retrySnap = await getDocs(colRef);
+          retrySnap.forEach(docSnap => {
+            rawList.push({ id: docSnap.id, ...docSnap.data() });
+          });
+        } else {
+          snap.forEach(docSnap => {
+            rawList.push({ id: docSnap.id, ...docSnap.data() });
+          });
+        }
+      } catch (err) {
+        console.error('[DompetQu] Error fetching categories:', err);
+      }
+    }
+
+    if (!rawList || rawList.length === 0) {
+      rawList = [
         ...DEFAULT_EXPENSE_CATEGORIES.map((c, i) => ({ id: `exp_${i}`, ...c, isArchived: false })),
         ...DEFAULT_INCOME_CATEGORIES.map((c, i) => ({ id: `inc_${i}`, ...c, isArchived: false }))
       ];
     }
 
-    try {
-      const colRef = collection(db, 'users', userId, 'categories');
-      const snap = await getDocs(colRef);
-
-      if (snap.empty) {
-        // Auto-seed if not yet created
-        await this.initDefaultCategories(userId);
-        const retrySnap = await getDocs(colRef);
-        const list = [];
-        retrySnap.forEach(docSnap => {
-          list.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        if (list.length > 0) {
-          list.sort((a, b) => a.name.localeCompare(b.name));
-          return list;
-        }
-      } else {
-        const list = [];
-        snap.forEach(docSnap => {
-          list.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        list.sort((a, b) => a.name.localeCompare(b.name));
-        return list;
+    // Automatic de-duplication: Keep 1 unique item per type + lowerCase(name)
+    const seen = new Set();
+    const unique = [];
+    for (const cat of rawList) {
+      const normName = (cat.name || '').trim().toLowerCase();
+      if (!normName) continue;
+      const key = `${cat.type || 'EXPENSE'}_${normName}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        unique.push(cat);
       }
-    } catch (err) {
-      console.error('[DompetQu] Error fetching categories:', err);
     }
 
-    // Always fallback to standard list so UI never breaks
-    return [
-      ...DEFAULT_EXPENSE_CATEGORIES.map((c, i) => ({ id: `exp_${i}`, ...c, isArchived: false })),
-      ...DEFAULT_INCOME_CATEGORIES.map((c, i) => ({ id: `inc_${i}`, ...c, isArchived: false }))
-    ];
+    unique.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    return unique;
   },
 
+  /**
+   * Add a new category with strict duplicate checking
+   */
   async addCategory(userId, { name, type, icon, color }) {
     if (!userId) throw new Error('User belum login');
+
+    const cleanName = (name || '').trim();
+    if (!cleanName) throw new Error('Nama kategori wajib diisi.');
+
+    // Prevent duplicate tag/category for the same type
+    const existing = await this.getCategories(userId);
+    const isDup = existing.some(c => c.type === type && (c.name || '').trim().toLowerCase() === cleanName.toLowerCase());
+    if (isDup) {
+      throw new Error(`Kategori "${cleanName}" sudah ada.`);
+    }
+
+    const payload = {
+      name: cleanName,
+      type: type || 'EXPENSE',
+      icon: icon || 'tag',
+      color: color || '#10B981',
+      isArchived: false
+    };
 
     if (!isConfigured || !db) {
       const list = await this.getCategories(userId);
       const newCat = {
         id: `cat_${Date.now()}`,
-        name: name.trim(),
-        type,
-        icon: icon || 'tag',
-        color: color || '#10B981',
-        isArchived: false,
+        ...payload,
         createdAt: new Date().toISOString()
       };
       list.push(newCat);
@@ -152,25 +183,27 @@ export const CategoryService = {
 
     const colRef = collection(db, 'users', userId, 'categories');
     const docRef = await addDoc(colRef, {
-      name: name.trim(),
-      type,
-      icon: icon || 'tag',
-      color: color || '#10B981',
-      isArchived: false,
+      ...payload,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     });
-    return { id: docRef.id, name, type, icon, color, isArchived: false };
+    return { id: docRef.id, ...payload };
   },
 
+  /**
+   * Update existing category (Edit nama, warna, dsb)
+   */
   async updateCategory(userId, categoryId, data) {
     if (!userId || !categoryId) return;
+
+    const updates = { ...data };
+    if (updates.name) updates.name = updates.name.trim();
 
     if (!isConfigured || !db) {
       const list = await this.getCategories(userId);
       const idx = list.findIndex(c => c.id === categoryId);
       if (idx !== -1) {
-        list[idx] = { ...list[idx], ...data, updatedAt: new Date().toISOString() };
+        list[idx] = { ...list[idx], ...updates, updatedAt: new Date().toISOString() };
         localStorage.setItem(`dompetqu_categories_${userId}`, JSON.stringify(list));
       }
       return;
@@ -178,9 +211,26 @@ export const CategoryService = {
 
     const docRef = doc(db, 'users', userId, 'categories', categoryId);
     await updateDoc(docRef, {
-      ...data,
+      ...updates,
       updatedAt: serverTimestamp()
     });
+  },
+
+  /**
+   * Delete category permanently
+   */
+  async deleteCategory(userId, categoryId) {
+    if (!userId || !categoryId) return;
+
+    if (!isConfigured || !db) {
+      const list = await this.getCategories(userId);
+      const filtered = list.filter(c => c.id !== categoryId);
+      localStorage.setItem(`dompetqu_categories_${userId}`, JSON.stringify(filtered));
+      return;
+    }
+
+    const docRef = doc(db, 'users', userId, 'categories', categoryId);
+    await deleteDoc(docRef);
   },
 
   async toggleArchiveCategory(userId, categoryId, isArchived) {

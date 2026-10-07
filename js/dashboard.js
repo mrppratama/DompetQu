@@ -47,11 +47,8 @@ export const DashboardManager = {
 
     const initialBalance = Number(settings.initialBalance || 0);
     const totalPundiBalance = pundis.reduce((sum, p) => sum + Number(p.balance || 0), 0);
-    const calculatedBalance = initialBalance + allIncome - allExpense;
-    // Fallback if no transactions yet but initial pundis exist
-    const totalBalance = (allRecentTransactions.length === 0 && totalPundiBalance > 0 && initialBalance === 0)
-      ? totalPundiBalance
-      : calculatedBalance;
+    // Strict E-Wallet balance formula: Saldo Awal + Total Pemasukan - Total Pengeluaran
+    const totalBalance = initialBalance + allIncome - allExpense;
 
     // 4. Compute Month Incomes and Expenses
     let monthIncome = 0;
