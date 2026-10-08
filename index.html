@@ -48,10 +48,10 @@
   <link rel="apple-touch-icon" href="assets/icons/icon-192.png">
 
   <!-- Core Stylesheets -->
-  <link rel="stylesheet" href="css/variables.css?v=1.5.3">
-  <link rel="stylesheet" href="css/style.css?v=1.5.3">
-  <link rel="stylesheet" href="css/components.css?v=1.5.3">
-  <link rel="stylesheet" href="css/responsive.css?v=1.5.3">
+  <link rel="stylesheet" href="css/variables.css?v=1.5.4">
+  <link rel="stylesheet" href="css/style.css?v=1.5.4">
+  <link rel="stylesheet" href="css/components.css?v=1.5.4">
+  <link rel="stylesheet" href="css/responsive.css?v=1.5.4">
 
   <!-- Chart.js & Lucide Icons -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
@@ -80,7 +80,7 @@
           <span>Dashboard</span>
         </a>
         <a href="#pundi" class="nav-link" data-view="pundi">
-          <i data-lucide="utensils" class="icon" style="width:18px;height:18px;"></i>
+          <i data-lucide="wallet-cards" class="icon" style="width:18px;height:18px;"></i>
           <span>Kantong</span>
         </a>
         <a href="#goals" class="nav-link" data-view="goals">
@@ -257,7 +257,7 @@
             <dd id="pundi-summary-expense">Rp0</dd>
           </div>
           <div class="summary-item summary-item-wide">
-            <dt><i data-lucide="utensils" class="icon" style="width:15px;height:15px;"></i> Total Saldo Kantong</dt>
+            <dt><i data-lucide="wallet-cards" class="icon" style="width:15px;height:15px;"></i> Total Saldo Kantong</dt>
             <dd id="pundi-total-allocated">Rp0</dd>
           </div>
         </dl>
@@ -578,7 +578,7 @@
         <span>Dashboard</span>
       </a>
       <a href="#pundi" class="bnav-link" data-view="pundi">
-        <i data-lucide="utensils" class="icon" style="width:20px;height:20px;"></i>
+        <i data-lucide="wallet-cards" class="icon" style="width:20px;height:20px;"></i>
         <span>Kantong</span>
       </a>
       <button type="button" class="bnav-fab btn-open-tx-modal" aria-label="Tambah Transaksi Baru">
@@ -751,9 +751,10 @@
           <div class="field">
             <label>Icon Kantong</label>
             <div class="icon-picker" id="pundi-icon-picker">
-              <label class="icon-option"><input type="radio" name="pundi_icon" value="utensils" checked><span><i data-lucide="utensils" style="width:18px;height:18px;"></i></span></label>
-              <label class="icon-option"><input type="radio" name="pundi_icon" value="coffee"><span><i data-lucide="coffee" style="width:18px;height:18px;"></i></span></label>
+              <label class="icon-option"><input type="radio" name="pundi_icon" value="wallet-cards" checked><span><i data-lucide="wallet-cards" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="wallet"><span><i data-lucide="wallet" style="width:18px;height:18px;"></i></span></label>
+              <label class="icon-option"><input type="radio" name="pundi_icon" value="utensils"><span><i data-lucide="utensils" style="width:18px;height:18px;"></i></span></label>
+              <label class="icon-option"><input type="radio" name="pundi_icon" value="coffee"><span><i data-lucide="coffee" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="vault"><span><i data-lucide="vault" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="shopping-bag"><span><i data-lucide="shopping-bag" style="width:18px;height:18px;"></i></span></label>
               <label class="icon-option"><input type="radio" name="pundi_icon" value="home"><span><i data-lucide="home" style="width:18px;height:18px;"></i></span></label>
@@ -1148,18 +1149,6 @@
 
         <!-- Quick Settings & Actions List -->
         <div class="profile-menu-list" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;">
-          <!-- Kelola Kantong Uang -->
-          <button type="button" class="profile-menu-item" id="profile-btn-pundi">
-            <div class="profile-menu-item-icon" style="background: rgba(16, 185, 129, 0.15); color: var(--primary);">
-              <i data-lucide="utensils" class="icon" style="width: 18px; height: 18px;"></i>
-            </div>
-            <div class="profile-menu-item-text">
-              <span class="title">Kelola Kantong Uang</span>
-              <span class="desc">Alokasikan uang & kelola saldo pos kantong</span>
-            </div>
-            <i data-lucide="chevron-right" class="icon" style="width: 16px; height: 16px; color: var(--text-3);"></i>
-          </button>
-
           <!-- Target Keuangan (Requirement 5: Diakses melalui Profile) -->
           <button type="button" class="profile-menu-item" id="profile-btn-goals">
             <div class="profile-menu-item-icon" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B;">
@@ -1428,6 +1417,6 @@
   <div class="toast-root" role="region" aria-label="Pemberitahuan"></div>
 
   <!-- Main ES Module Script -->
-  <script type="module" src="js/app.js?v=1.5.2"></script>
+  <script type="module" src="js/app.js?v=1.5.4"></script>
 </body>
 </html>

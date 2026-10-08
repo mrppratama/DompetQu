@@ -102,7 +102,7 @@ export const DashboardManager = {
       if (pundis.length === 0) {
         elements.pundiListContainer.innerHTML = `
           <div class="card empty">
-            <div class="empty-icon"><i data-lucide="utensils" style="width:24px;height:24px;"></i></div>
+            <div class="empty-icon"><i data-lucide="wallet-cards" style="width:24px;height:24px;"></i></div>
             <p class="empty-title">Belum ada Kantong</p>
             <p class="empty-text">Buat Kantong untuk membagi uang Anda ke pos-pos kebutuhan.</p>
             <button type="button" class="btn btn-secondary btn-sm btn-open-pundi-modal" id="btn-create-first-pundi">Buat Kantong</button>

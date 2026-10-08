@@ -82,7 +82,7 @@ export const AuthService = {
         name: 'Kantong Utama',
         initialBalance: 0,
         color: '#10B981',
-        icon: 'utensils'
+        icon: 'wallet-cards'
       });
       return demoUser;
     }
@@ -112,7 +112,7 @@ export const AuthService = {
         name: 'Kantong Utama',
         initialBalance: 0,
         color: '#10B981',
-        icon: 'utensils'
+        icon: 'wallet-cards'
       });
 
       return user;
@@ -143,7 +143,7 @@ export const AuthService = {
           name: 'Kantong Utama',
           initialBalance: 0,
           color: '#10B981',
-          icon: 'utensils'
+          icon: 'wallet-cards'
         });
       }
       return demoUser;

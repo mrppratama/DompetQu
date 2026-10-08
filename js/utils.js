@@ -419,12 +419,13 @@ export function generateId(prefix = 'id') {
 }
 
 /**
- * Standard list of persistent Lucide icons for Kantong Uang (Food & Daily life themes)
+ * Standard list of persistent Lucide icons for Kantong Uang
  */
 export const AVAILABLE_PUNDI_ICONS = [
+  { id: 'wallet-cards', label: 'Kantong Uang' },
+  { id: 'wallet', label: 'Dompet' },
   { id: 'utensils', label: 'Makanan & Kuliner' },
   { id: 'coffee', label: 'Makan & Kafe' },
-  { id: 'wallet', label: 'Dompet' },
   { id: 'vault', label: 'Brankas' },
   { id: 'shopping-bag', label: 'Belanja' },
   { id: 'home', label: 'Rumah & Tempat Tinggal' },
@@ -438,12 +439,12 @@ export const AVAILABLE_PUNDI_ICONS = [
 ];
 
 /**
- * Safely resolve a Kantong icon ID with guaranteed fallback to utensils
+ * Safely resolve a Kantong icon ID with guaranteed fallback to wallet-cards
  */
 export function resolvePundiIcon(iconName) {
-  if (!iconName || typeof iconName !== 'string') return 'utensils';
+  if (!iconName || typeof iconName !== 'string') return 'wallet-cards';
   const clean = iconName.trim().toLowerCase();
-  if (clean === 'piggy-bank' || clean === 'pig') return 'utensils';
+  if (clean === 'piggy-bank' || clean === 'pig') return 'wallet-cards';
   const exists = AVAILABLE_PUNDI_ICONS.some(item => item.id === clean);
-  return exists ? clean : 'utensils';
+  return exists ? clean : 'wallet-cards';
 }

@@ -499,7 +499,7 @@ async function loadPundiView() {
   if (active.length === 0) {
     pundiContainer.innerHTML = `
       <div class="card empty" style="grid-column: 1 / -1;">
-        <div class="empty-icon"><i data-lucide="utensils" style="width:24px;height:24px;"></i></div>
+        <div class="empty-icon"><i data-lucide="wallet-cards" style="width:24px;height:24px;"></i></div>
         <p class="empty-title">Belum ada Kantong aktif</p>
         <p class="empty-text">Buat Kantong untuk memisahkan dan mengalokasikan uang yang benar-benar tersedia.</p>
         <button type="button" class="btn btn-primary btn-sm btn-open-pundi-modal" id="btn-add-pundi-empty">Buat Kantong Pertama</button>
@@ -656,7 +656,7 @@ function openPundiModal(pundiToEdit = null) {
     nameInput.value = '';
     descInput.value = '';
 
-    const defaultIcon = dom.formPundi.querySelector('input[name="pundi_icon"][value="utensils"]') || dom.formPundi.querySelector('input[name="pundi_icon"]');
+    const defaultIcon = dom.formPundi.querySelector('input[name="pundi_icon"][value="wallet-cards"]') || dom.formPundi.querySelector('input[name="pundi_icon"][value="wallet"]') || dom.formPundi.querySelector('input[name="pundi_icon"]');
     if (defaultIcon) defaultIcon.checked = true;
 
     const defaultColor = dom.formPundi.querySelector('input[name="pundi_color"][value="#10B981"]');
@@ -675,7 +675,7 @@ if (dom.formPundi) {
     const id = document.getElementById('pundi-id').value;
     const name = document.getElementById('pundi-name').value;
     const desc = document.getElementById('pundi-desc').value;
-    const icon = resolvePundiIcon(dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'utensils');
+    const icon = resolvePundiIcon(dom.formPundi.querySelector('input[name="pundi_icon"]:checked')?.value || 'wallet-cards');
     const color = dom.formPundi.querySelector('input[name="pundi_color"]:checked')?.value || '#10B981';
 
     Validator.clearFormErrors(dom.formPundi);

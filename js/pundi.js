@@ -79,7 +79,7 @@ export const PundiService = {
   /**
    * Create new Kantong (Starts at Rp0; name, icon, optional description)
    */
-  async createPundi(userId, { name, description = '', color = '#10B981', icon = 'utensils' }) {
+  async createPundi(userId, { name, description = '', color = '#10B981', icon = 'wallet-cards' }) {
     if (!userId) throw new Error('User belum login');
 
     const payload = {
